@@ -1,0 +1,43 @@
+body {
+	background-color: black;
+	color: #e5e5e5;
+	text-align: left;
+	font-family: Monaco, monospace;
+	font-size: 18px;
+	padding: 10px;
+}
+p {
+	margin: 5px;
+}
+button {
+	background-color: rgb(106, 139, 166);
+	border: 1px solid #e5e5e5;
+	color: #e5e5e5;
+	text-align: left;
+	font-size: 16px;
+	font-family: Monaco, monospace;
+	margin: 5px;
+}
+button:hover {
+	background-color: #e5e5e5;
+	color: #6a8ba6;
+}
+input {
+	background-color: #6a8ba6;
+	color: #e5e5e5;
+	font-size: 16px;
+	font-family: Monaco, monospace;
+	border: 1px solid #e5e5e5;
+	margin: 4px;
+}
+input::placeholder{
+	color: #264E6E;
+}
+/* 
+	white: #e5e5e5
+	a bit darker gray of white: #C9C9C9
+	black: black
+	lavendre: rgb(149, 136, 204)
+	blue: rgb(106, 139, 166) OR #6a8ba6
+	green of icon or on button: #38ec9c
+*/

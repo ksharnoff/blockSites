@@ -1,0 +1,24 @@
+{
+   "manifest_version": 3,
+	"name": "blockSites",
+	"author": "Kezia Sharnoff",
+	"version": "0.1.0",
+	"description": "Block sites during work periods",
+	"action": {
+		"default_popup": "popup.html"
+
+	},
+	"icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+   },
+   "background": {
+   	"service_worker": "background.js"
+   },
+	"permissions": [
+		"storage", // for telling when a tab is updated & that tab's components  
+		"tabs" // for storing the blocking groups in storage
+	]
+}
