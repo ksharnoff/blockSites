@@ -29,8 +29,21 @@
 		<p> This button accesses all the websites from every group that you have active (selected green for on) and blocks those websites from midnight until midnight. </p>
 
 		<br>
+	 	<h3> Question: How do I delete a site or time input field on the settings page? </h3>
+	 	<p>	You cannot. If the input field for a site is empty (no text written), then it will not be saved to storage and when you next visit the settings page it will not be there. If the start time is the same as the end time, it will similarly not be recorded or displayed. </p>
+
+	 	<br>
+		<h3> Question: I made a change on settings, pressed the save button, reloaded, and the page hasn't changed? </h3>
+		<p> Once you click the save button, all your new settings are collected and given to Chrome storage. This can sometimes be slow, depending what else you're doing on Chrome. It will be written, but not instantly. Whenever you reload the settings page, it gets whatever data is already in Chrome's storage, which can be not up to date. </p>
+
+		<br>
 		<h3> Question: Can I change / add to the photos that show on the blocked site? </h3>
 		<p> YES! First, move your image into the folder titled "images" within the "blockSites" extension folder. Then, put the name of those images and some alt text in the file "blocked.js". There are more instructions of where exactly to write those within that file. </p>
+
+		<br>
+	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking? </h3>
+	 	<p>	It won't block. If, in the same time period, you have "youtube.com" in the block list but also you have "youtube.com" in the exclude list, it will not block. What sites block what depends on being in the same time range, not the same group. </p>
+
 
 		<br>
 		<h3> Question: Can I have more than 8 groups? </h3>
