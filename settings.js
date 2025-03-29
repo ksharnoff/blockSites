@@ -6,11 +6,22 @@
 
 // give everything titles so that they are clear to screen readers!!
 
+// add to settings html a <p> saying that things have not loaded in correctly 
+// as the default thing that then will be made invisable once things have 
+// finished loading in.... + put all of them into a giant all groups div to 
+// add more groups onto and make the div invisable until finished loading from config. 
 
-// MAKE SURE THAT THE ON AND OFF BUTTONS ARE CORRECTLY COLORED AND THAT ALL THE FIELDS ARE FILLED IN!!
+// move blockAllSites from the popup to the top left of settings.html and make it a toggle
+
+
+
+// MAKE SURE THAT THE DAY BUTTONS ARE CORRECTLY COLORED AND THAT ALL THE FIELDS ARE FILLED IN!!
 window.addEventListener("load", function() {
 
 	// fill in all the input fields & buttons from storage....
+
+	// aka just call fillPage(); and fill page will need to sort out from storage...
+	// maybe break up the componnents more from drawBlankGroup?
 });
 
 const g1Mbutton = document.getElementById("g1M");
@@ -65,6 +76,9 @@ moreGroups.addEventListener("click", function() {
 // note that the id of the div for all the sites in group1 will be "siteDiv1"
 
 
+// make it so that drawGroup takes in a group 
+// object as input and that group object could be null!! :D
+
 // where all of the groups are in a div called allDiv (right now coded it for groupDiv1)
 // give input of string num for the group being made
 // repeated code between the new sites and new excludes buttons!!
@@ -74,29 +88,12 @@ function drawBlankGroup(groupNum) {
 	let groupDiv = document.createElement("div");
 	groupDiv.id = "groupDiv1" + groupNum;
 
-	groupDiv.appendChild(paragraphElement("group " + groupNum + ":"));
+	let nameText = paragraphElement("group" + groupNum + ":");
+	nameText.style.cssText = "display:inline-block;";
+	groupDiv.appendChild(nameText);
 
 	// on and off buttons
-	let onButton = document.createElement("button");
-	onButton.style.cssText = "display: inline-block;";
-	onButton.innerHTML = "on";
-	onButton.dataset.group = groupNum;
-	onButton.dataset.type = "onButton";
-	onButton.addEventListener('click', function() {
-		swapClicked(onButton);
-	});
-	groupDiv.appendChild(onButton);
-
-	let offButton = document.createElement("button");
-	offButton.style.cssText = "display: inline-block;";
-	offButton.innerHTML = "off";
-	offButton.dataset.group = groupNum;
-	offButton.dataset.type = "offButton";
-	offButton.addEventListener('click', function() {
-		swapClicked(offButton);
-	});
-	groupDiv.appendChild(offButton);
-
+	groupDiv.appendChild(buttonElement("on", groupNum, true));
 
 	groupDiv.appendChild(blankLineElement());
 	groupDiv.appendChild(blankLineElement());
@@ -174,13 +171,13 @@ function drawBlankGroup(groupNum) {
 
 	// right now does not look right with no spaces between them! 
 	let dayDiv = document.createElement("div");
-	dayDiv.appendChild(dayButtonElement("Su", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("Mo", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("Tu", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("We", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("Th", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("Fr", groupNum, false));
-	dayDiv.appendChild(dayButtonElement("Sa", groupNum, false));
+	dayDiv.appendChild(buttonElement("Su", groupNum, false));
+	dayDiv.appendChild(buttonElement("Mo", groupNum, false));
+	dayDiv.appendChild(buttonElement("Tu", groupNum, false));
+	dayDiv.appendChild(buttonElement("We", groupNum, false));
+	dayDiv.appendChild(buttonElement("Th", groupNum, false));
+	dayDiv.appendChild(buttonElement("Fr", groupNum, false));
+	dayDiv.appendChild(buttonElement("Sa", groupNum, false));
 
 	groupDiv.appendChild(dayDiv);
 
@@ -276,7 +273,6 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime) {
 	return div;
 }
 
-
 // where type is "start" or "end"
 function timeInputElement(type, time, groupNum, pairNum) {
 	let newTime = document.createElement("input");
@@ -302,11 +298,10 @@ function timeInputElement(type, time, groupNum, pairNum) {
 	return newTime;
 }
 
-
 // buttons work when clicked on for first time!! however 
 // when hovered over they do not look right.... 
 // returns a button for the days of the week div set up
-function dayButtonElement(day, groupNum, active) {
+function buttonElement(day, groupNum, active) {
 	let newButton = document.createElement("button");
 	newButton.style.cssText = "display: inline-block; margin: 3px;";
 	newButton.innerHTML = day;
@@ -364,10 +359,13 @@ function Group(key, active, sites, exclude, times, days) {
 
 
 // CURRENTLY ISN'T QUITE WORKING, NEEDS TO CLICK TWICE TO START IT FLIPPING BACK AND FORTH
+		// to fix it, change to be if (green) else {..turn green.} bc when it starts off green 
+		// it's always the right color but for some reason drawing a blank button makes it wrong sometimes
 // pass in button, check if it's already blue or green and does opposite
 		// if start it off by clicked or unclicked then it works! :D
 function swapClicked(button) {
 	console.log(button.style.background);
+	// when doing comparisons it must be rgb for some reason and not hex……
 	if (button.style.background == "rgb(106, 139, 166)") {
 		clicked(button);
 		console.log("unclicked!");
@@ -381,12 +379,15 @@ function swapClicked(button) {
 // change color of the button to be green
 // pass in the document.getElementById
 function clicked(button) {
-	button.style.background = "#38ec9c";
+	// button.style.background = "#239560"; // darker more contrasting green! (not too contrasting)
+	button.sytle.background = "#38ec9c";
 }
 
 // change color of button to be default blue
 function unclicked(button) {
-	button.style.background = "#6a8ba6";
+	// button.style.background = "#6384A1"; // darker more contrasting blue! (not too contrasting)
+	button.sytle.background = "#6a8ba6";
+
 }
 
 
