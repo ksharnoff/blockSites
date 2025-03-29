@@ -14,9 +14,36 @@
 // move blockAllSites from the popup to the top left of settings.html and make it a toggle
 
 
+const group1 = new Group(true, 
+	["wikipedia.org", "mail.google.com"], 
+	["en.wikipedia.org/wiki/California"], 
+	[["10:00", "04:10"],["12:59", "23:59"]], 
+	[true, true, false, false, false, false, true]);
+
+const group2 = new Group(true, 
+	["facebook.com", "gmail.com"], 
+	["testingtesting123"], 
+	[["10:00", "06:13"],["12:59", "14:39"]],
+	[true, false, true, true, true, false, true]);
+
+// where group3 is null....??,, nothing in the group! 
+// will not actually store in storage a null group but I will use a
+// null call to draw a blank group!
+const group3 = null;
+
+const config = [group1, group2, group3];
+
+// should be const?
+let allGroupsDiv = document.getElementById("allGroupsDiv");
 
 // MAKE SURE THAT THE DAY BUTTONS ARE CORRECTLY COLORED AND THAT ALL THE FIELDS ARE FILLED IN!!
 window.addEventListener("load", function() {
+	let numGroups = config.length;
+	for (let i = 0; i < numGroups; i++) {
+		drawGroup(i+1, config[i])
+	}
+	allGroupsDiv.dataset.groupCount = numGroups;
+
 
 	// fill in all the input fields & buttons from storage....
 
@@ -26,13 +53,18 @@ window.addEventListener("load", function() {
 
 const g1Mbutton = document.getElementById("g1M");
 g1Mbutton.addEventListener("click", function() {
-	swapClicked(g1Mbutton);
+	chrome.storage.local.get("foo", function(results) {
+		console.log("trying to get something not in storage gives: " + results);
+			// object Object???? lol
+
+		console.log("accessing the thing of the object gives: " + results.foo);
+			// gives undefined!!! 
+	});
 });
 
 
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
-	drawBlankGroup("2");
 });
 
 // let currentTime = document.getElementById("testingTime").value;
@@ -44,16 +76,26 @@ saveButton.addEventListener("click", function() {
 
 const moreGroups = document.getElementById("moreGroups");
 moreGroups.addEventListener("click", function() {
-	chrome.storage.local.get("foo", function(results) {
-		console.log("trying to get something not in storage gives: " + results);
-			// object Object???? lol
 
-		console.log("accessing the thing of the object gives: " + results.foo);
-			// gives undefined!!! 
-	});
+	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
+	if (isNaN(newGroupCount)) {
+		console.log("Failed to turn group count in allGroupsDiv into an int");
+		// because we still want to make the div but it needs to have a unique 
+		// id counter, we do a random number from 500 to 10,500, extemely 
+		// unlikely to exist already. We do plus 500 for if they already 
+		// have a bunch of groups so it cannot overlap. I would not assume 
+		// that people have more than 500 groups.
+		// also because this starts it as an int, this will fix future iterations
+		newGroupCount = 10000*Math.random() + 500;
+	} else {
+		newGroupCount++;
+	}
+	drawGroup(newGroupCount, null);
+	allGroupsDiv.dataset.groupCount = newGroupCount;
 });	
 
 
+const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 // the buttons are irritating to know if have been 
 // pressed,, ig just need to check the background color? 
@@ -79,21 +121,27 @@ moreGroups.addEventListener("click", function() {
 // make it so that drawGroup takes in a group 
 // object as input and that group object could be null!! :D
 
-// where all of the groups are in a div called allDiv (right now coded it for groupDiv1)
+// where all of the groups are in a div called allGroupsDiv (right now coded it for groupDiv1)
 // give input of string num for the group being made
 // repeated code between the new sites and new excludes buttons!!
 // groupNum is a string
-function drawBlankGroup(groupNum) {
-	console.log("draw new group called");
+function drawGroup(groupNum, group) {
 	let groupDiv = document.createElement("div");
-	groupDiv.id = "groupDiv1" + groupNum;
+	groupDiv.id = "groupDiv" + groupNum;
 
-	let nameText = paragraphElement("group" + groupNum + ":");
+	let nameText = paragraphElement("group " + groupNum + ":");
 	nameText.style.cssText = "display:inline-block;";
 	groupDiv.appendChild(nameText);
 
-	// on and off buttons
-	groupDiv.appendChild(buttonElement("on", groupNum, true));
+
+	// if group is null, then is creating a new group to be filled in. 
+	// therefore, should have empty strings for all the values which 
+	// the helper functions will correctly interpret
+	if (group == null) {
+		group = new Group(true, [""], ["", ""], [["", ""]], [true, true, true, true, true, true, true])
+	}
+
+	groupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
 
 	groupDiv.appendChild(blankLineElement());
 	groupDiv.appendChild(blankLineElement());
@@ -101,16 +149,14 @@ function drawBlankGroup(groupNum) {
 	groupDiv.appendChild(paragraphElement("sites to block:"));
 
 	// inputs for sites
-	let sitesDiv = document.createElement("div");
-	sitesDiv.id = "siteDiv" + groupNum;
-	for (let i = 0; i < 2; i++) {
-		let newSite = textInputElement("site", groupNum);
-		// if not blank group edit inner html here,, 
-		// if is blank then dont' need var newSite
-		sitesDiv.appendChild(newSite);
-		sitesDiv.appendChild(blankLineElement())
+
+	let siteDiv = document.createElement("div");
+	siteDiv.id = "siteDiv" + groupNum;
+	let sitesCount = group.sites.length;
+	for (let i = 0; i < sitesCount; i++) {
+		siteDiv.appendChild(textInputDiv("site", groupNum, group.sites[i], siteDiv));
 	} 
-	groupDiv.appendChild(sitesDiv);
+	groupDiv.appendChild(siteDiv);
 
 	// button for more sites
 	let moreSitesButton = document.createElement("button");
@@ -126,12 +172,9 @@ function drawBlankGroup(groupNum) {
 	groupDiv.appendChild(paragraphElement("sites to exclude from blocking:"));
 	let excludeDiv = document.createElement("div");
 	excludeDiv.id = "excludeDiv" + groupNum;
-	for (let i = 0; i < 1; i++) {
-		let newExclude = textInputElement("exclude", groupNum);
-		// if not blank group edit inner html here,, 
-		// if is blank then dont' need var newExclude
-		excludeDiv.appendChild(newExclude);
-		excludeDiv.appendChild(blankLineElement())
+	let excludeCount = group.excludes.length;
+	for (let i = 0; i < excludeCount; i++) {
+		excludeDiv.appendChild(textInputDiv("exclude", groupNum, group.excludes[i], excludeDiv));
 	} 
 	groupDiv.appendChild(excludeDiv);
 
@@ -146,15 +189,16 @@ function drawBlankGroup(groupNum) {
 	groupDiv.appendChild(blankLineElement());
 
 
-	// get timecount from config
-	let timeCount = 1;
+	groupDiv.appendChild(paragraphElement("times to block:"));
+
+
+	let timeCount = group.times.length;
 	let timeDiv = document.createElement("div");
 	timeDiv.id = "timeDiv" + groupNum;
 	timeDiv.dataset.paircount = timeCount;
-	for (let i = 1; i < timeCount + 1; i++) {
-		let newTime = timeInputsDiv(groupNum, i, "", "");
-		timeDiv.appendChild(newTime);
-		// timeDiv.appendChild(blankLineElement());
+	// rename paircount to be nextId???
+	for (let i = 0; i < timeCount; i++) {
+		timeDiv.appendChild(timeInputsDiv(groupNum, i+1, group.times[i][0], group.times[i][1], timeDiv));
 	}
 	groupDiv.appendChild(timeDiv);
 
@@ -169,27 +213,24 @@ function drawBlankGroup(groupNum) {
 
 	groupDiv.appendChild(blankLineElement());
 
+	groupDiv.appendChild(paragraphElement("days blocked:"));
+
 	// right now does not look right with no spaces between them! 
 	let dayDiv = document.createElement("div");
-	dayDiv.appendChild(buttonElement("Su", groupNum, false));
-	dayDiv.appendChild(buttonElement("Mo", groupNum, false));
-	dayDiv.appendChild(buttonElement("Tu", groupNum, false));
-	dayDiv.appendChild(buttonElement("We", groupNum, false));
-	dayDiv.appendChild(buttonElement("Th", groupNum, false));
-	dayDiv.appendChild(buttonElement("Fr", groupNum, false));
-	dayDiv.appendChild(buttonElement("Sa", groupNum, false));
 
+	for (let i = 0; i < 7; i++){
+		dayDiv.appendChild(buttonElement(daysOfWeek[i], groupNum, group.days[i], false));
+	}
 	groupDiv.appendChild(dayDiv);
 
-
 	groupDiv.appendChild(blankLineElement());
 	groupDiv.appendChild(blankLineElement());
-	document.getElementById("groupDiv1").appendChild(groupDiv);
+	allGroupsDiv.appendChild(groupDiv);
 }
 
 // where type is "site", "exclude", or "time"
 // function called when button for more sites is pushed, more input 
-// spaces are created for either the sites or the excludes
+// spaces are created for either the sites or the excludes,, blank spaces!
 function drawMoreInputs(type, groupNum) {
 	console.log("drawmoreinputs");
 	let div = document.getElementById(type + "Div" + groupNum);
@@ -210,7 +251,7 @@ function drawMoreInputs(type, groupNum) {
 		}
 		newPairCount++;
 
-		newInput = timeInputsDiv(groupNum, newPairCount, "", "");
+		newInput = timeInputsDiv(groupNum, newPairCount, "", "", div);
 		if (newInput != null) {
 			div.dataset.paircount = newPairCount;
 		}
@@ -220,7 +261,7 @@ function drawMoreInputs(type, groupNum) {
 	}
 
 	// otherwise, the type will be 	site or exclude if (type === "site" || type === "exclude") {
-	newInput = textInputElement(type, groupNum);
+	newInput = textInputDiv(type, groupNum, "", div);
 
 	// if failed to make a new element, return
 	if (newInput == null) {
@@ -229,17 +270,17 @@ function drawMoreInputs(type, groupNum) {
 	}
 
 	div.appendChild(newInput);
-	div.appendChild(blankLineElement());
 }
 
 // returns a text input element made for sites or excludes, 
 // or returns undefined and logs to console if failed
-function textInputElement(type, groupNum) {
+function textInputDiv(type, groupNum, value, parentDiv) {
 	let newInput = document.createElement("input");
 	newInput.type = "text";
 	newInput.style.cssText = "width: 350px;";
 	newInput.dataset.type = type;
 	newInput.dataset.group = groupNum;
+
 	if (type === "site") {
 		newInput.placeholder = "ex: youtube.com";
 	} else if (type === "exclude") {
@@ -248,14 +289,22 @@ function textInputElement(type, groupNum) {
 		console.log("Failed making new text input as given bad input group type");
 		return null;
 	}
-	return newInput;
+
+	newInput.value = value;
+
+	let div = document.createElement("div");
+	div.appendChild(newInput);
+	div.appendChild(deleteElementButton(div, parentDiv));
+	div.appendChild(blankLineElement());
+
+	return div;
 }
 
 // returns a new div of paragraph labels and time 
 // entries for starting and ending times
 
 // weirdly not doing spaces around the "start:" and "end:" like it does in .html??
-function timeInputsDiv(groupNum, pairNum, startTime, endTime) {
+function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	let div = document.createElement("div");
 
 	let startText = paragraphElement(" start: ");
@@ -269,39 +318,30 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime) {
 	div.appendChild(endText);
 
 	div.appendChild(timeInputElement("end", endTime, groupNum, pairNum));
+	div.appendChild(deleteElementButton(div, parentDiv));
 
 	return div;
 }
 
 // where type is "start" or "end"
-function timeInputElement(type, time, groupNum, pairNum) {
+function timeInputElement(type, value, groupNum, pairNum) {
 	let newTime = document.createElement("input");
 	newTime.type = "time";
 	newTime.style.cssText = "width:120px;";
 	newTime.dataset.type = type + "Time";
 	newTime.dataset.group = groupNum;
 	newTime.dataset.timePair = pairNum;
+	newTime.value = value;
 
-	if (time !== "") {
-		newTime.value = time;
-		return newTime;
-	}
-
-	if (type === "start") {
-		newTime.value = "00:00";
-	} else if (type === "end") {
-		newTime.value = "23:59";
-	} else {
-		console.log("Bad type input given to create new time element");
-		return;
-	}
 	return newTime;
 }
 
 // buttons work when clicked on for first time!! however 
 // when hovered over they do not look right.... 
-// returns a button for the days of the week div set up
-function buttonElement(day, groupNum, active) {
+// returns a button for the days of the week div set up and the active: on
+// where activeButton is true if it says "on" and false otherwise
+// rename this function to be better!
+function buttonElement(day, groupNum, clickedButton, activeButton) {
 	let newButton = document.createElement("button");
 	newButton.style.cssText = "display: inline-block; margin: 3px;";
 	newButton.innerHTML = day;
@@ -309,14 +349,28 @@ function buttonElement(day, groupNum, active) {
 	newButton.dataset.type = day + "Button";
 
 	newButton.addEventListener('click', function() {
-		swapClicked(newButton);
+		swapClicked(newButton, activeButton);
 	});
 
-	if (active) {
-		clicked(newButton);
+	if (clickedButton) {
+		clicked(newButton, activeButton);
 	} else {
-		unclicked(newButton);
+		unclicked(newButton, activeButton);
 	}
+
+	return newButton;
+}
+
+// input is the element that should be deleted and the div it belongs to
+function deleteElementButton(element, div) {
+	let newButton = document.createElement("button");
+	newButton.innerHTML = "x";
+
+	newButton.addEventListener('click', function() {
+		div.removeChild(element);
+	});
+	// set the correct color by:
+	unclicked(newButton);
 
 	return newButton;
 }
@@ -333,6 +387,10 @@ function paragraphElement(text) {
 	return newPara;
 }
 
+// function deleteElement(div, element) {
+// 	div.removeChild(element);
+// }
+
 // // Find all elements with data-columns="3"
 // const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
 // // You can then iterate over the results
@@ -341,16 +399,14 @@ function paragraphElement(text) {
 // });
 
 
-// MAYBE NO KEY?
-// key is a string such as "1" for group 1; sites is an array of 
+// sites is an array of 
 // strings; exclude is an array of strings times is an array of 
 // two length arrays (first element is start time, second is end 
 // time, ints); days is a 7-array of booleans; active is a boolean 
 // true or false
-function Group(key, active, sites, exclude, times, days) {
-	this.key = key;
+function Group(active, sites, excludes, times, days) {
 	this.sites = sites;
-	this.exclude = exclude;
+	this.excludes = excludes;
 	this.times = times;
 	this.days = days;
 	this.active = active;
@@ -363,14 +419,14 @@ function Group(key, active, sites, exclude, times, days) {
 		// it's always the right color but for some reason drawing a blank button makes it wrong sometimes
 // pass in button, check if it's already blue or green and does opposite
 		// if start it off by clicked or unclicked then it works! :D
-function swapClicked(button) {
+function swapClicked(button, activeButton) {
 	console.log(button.style.background);
 	// when doing comparisons it must be rgb for some reason and not hex……
 	if (button.style.background == "rgb(106, 139, 166)") {
-		clicked(button);
+		clicked(button, activeButton);
 		console.log("unclicked!");
 	} else {
-		unclicked(button);
+		unclicked(button, activeButton);
 		console.log("clicked!");
 	}
 	button.style.color = "#e5e5e5";
@@ -378,16 +434,25 @@ function swapClicked(button) {
 
 // change color of the button to be green
 // pass in the document.getElementById
-function clicked(button) {
+
+// if it's the button saying if it's active then change the text to "on"
+function clicked(button, activeButton) {
 	// button.style.background = "#239560"; // darker more contrasting green! (not too contrasting)
-	button.sytle.background = "#38ec9c";
+	button.style.background = "#38ec9c";
+	if (activeButton) {
+		button.innerHTML = "on";
+	}
 }
 
 // change color of button to be default blue
-function unclicked(button) {
+// if it's the button saying if it's active 
+// then change the text to "on"
+function unclicked(button, activeButton) {
 	// button.style.background = "#6384A1"; // darker more contrasting blue! (not too contrasting)
-	button.sytle.background = "#6a8ba6";
-
+	button.style.background = "#6a8ba6";
+	if (activeButton) {
+		button.innerHTML = "off";
+	}
 }
 
 
