@@ -13,6 +13,8 @@
 
 // move blockAllSites from the popup to the top left of settings.html and make it a toggle
 
+// idea: make the blue and green swapping buttons have no hover behavor
+
 
 const group1 = new Group(true, 
 	["wikipedia.org", "mail.google.com"], 
@@ -40,7 +42,7 @@ let allGroupsDiv = document.getElementById("allGroupsDiv");
 window.addEventListener("load", function() {
 	let numGroups = config.length;
 	for (let i = 0; i < numGroups; i++) {
-		drawGroup(i+1, config[i])
+		drawGroup(i + 1, config[i])
 	}
 	allGroupsDiv.dataset.groupCount = numGroups;
 
@@ -51,8 +53,8 @@ window.addEventListener("load", function() {
 	// maybe break up the componnents more from drawBlankGroup?
 });
 
-const g1Mbutton = document.getElementById("g1M");
-g1Mbutton.addEventListener("click", function() {
+const testingbutton = document.getElementById("testingButton");
+testingbutton.addEventListener("click", function() {
 	chrome.storage.local.get("foo", function(results) {
 		console.log("trying to get something not in storage gives: " + results);
 			// object Object???? lol
@@ -63,20 +65,35 @@ g1Mbutton.addEventListener("click", function() {
 });
 
 
+	
+// if iterating over child list,, perhaps do not need to have the dataset.group!
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
+
+	// can do allGroupsDiv.children to get each of its children loop through and then loop through each of those children too!!?? 
+
+	console.log("all groups div childdren:");
+	console.log(allGroupsDiv.children);
+
+
+
+	const group1Elements = document.querySelectorAll('[data-group = "1"]');
+	group1Elements.forEach(function(element) {
+		console.log(element);
+		console.log(element.dataset.type);
+	});
 });
 
-// let currentTime = document.getElementById("testingTime").value;
-
-// console.log(currentTime);
-// console.log(typeof currentTime);
-// it's a string!!
-
+// returns a static nodeList whre changes in the nodeList do not affect the DOM!
+// // Find all elements with data-columns="3"
+// const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
+// // You can then iterate over the results
+// threeColumnArticles.forEach((article) => {
+//   console.log(article.dataset.indexNumber);
+// });
 
 const moreGroups = document.getElementById("moreGroups");
 moreGroups.addEventListener("click", function() {
-
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
 	if (isNaN(newGroupCount)) {
 		console.log("Failed to turn group count in allGroupsDiv into an int");
@@ -97,9 +114,6 @@ moreGroups.addEventListener("click", function() {
 
 const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-// the buttons are irritating to know if have been 
-// pressed,, ig just need to check the background color? 
-
 
 // okay once save button is pressed then:
 // iterate through all the elements on the page (everything with a class "group")
@@ -112,20 +126,21 @@ const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 			// also group names would be group1start1 etc.
 // once the current data-group of the elements being iterated chagnes, send off the group method
 
-// also the buttons and stuff will have data-type = siteButton for more sites,, 
-// so then we know what div to use to add more inputs to! 
-
 // note that the id of the div for all the sites in group1 will be "siteDiv1"
 
-
 // make it so that drawGroup takes in a group 
-// object as input and that group object could be null!! :D
 
-// where all of the groups are in a div called allGroupsDiv (right now coded it for groupDiv1)
+// where all of the groups are in a div called allGroupsDiv
 // give input of string num for the group being made
 // repeated code between the new sites and new excludes buttons!!
-// groupNum is a string
 function drawGroup(groupNum, group) {
+	// if group is null, then is creating a new group to be filled in. 
+	// therefore, should have empty strings for all the values which 
+	// the helper functions will correctly interpret
+	if (group == null) {
+		group = new Group(true, ["", ""], [""], [["", ""]], [true, true, true, true, true, true, true])
+	}
+
 	let groupDiv = document.createElement("div");
 	groupDiv.id = "groupDiv" + groupNum;
 
@@ -133,15 +148,8 @@ function drawGroup(groupNum, group) {
 	nameText.style.cssText = "display:inline-block;";
 	groupDiv.appendChild(nameText);
 
-
-	// if group is null, then is creating a new group to be filled in. 
-	// therefore, should have empty strings for all the values which 
-	// the helper functions will correctly interpret
-	if (group == null) {
-		group = new Group(true, [""], ["", ""], [["", ""]], [true, true, true, true, true, true, true])
-	}
-
 	groupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
+	groupDiv.appendChild(deleteElementButton(groupDiv, allGroupsDiv, "delete group"));
 
 	groupDiv.appendChild(blankLineElement());
 	groupDiv.appendChild(blankLineElement());
@@ -161,6 +169,7 @@ function drawGroup(groupNum, group) {
 	// button for more sites
 	let moreSitesButton = document.createElement("button");
 	moreSitesButton.style.cssText = "display: block;";
+	moreSitesButton.className = "hoverable";
 	moreSitesButton.innerHTML = "more sites";
 	moreSitesButton.addEventListener("click", function() {
 		drawMoreInputs("site", groupNum);
@@ -182,6 +191,7 @@ function drawGroup(groupNum, group) {
 	let moreExcludesButton = document.createElement("button");
 	moreExcludesButton.style.cssText = "display: block;";
 	moreExcludesButton.innerHTML = "more sites";
+	moreExcludesButton.className = "hoverable";
 	moreExcludesButton.addEventListener("click", function() {
 		drawMoreInputs("exclude", groupNum);
 	});
@@ -206,6 +216,7 @@ function drawGroup(groupNum, group) {
 	let moreTimesButton = document.createElement("button");
 	moreTimesButton.style.cssText = "display: block;";
 	moreTimesButton.innerHTML = "more times";
+	moreTimesButton.className = "hoverable";
 	moreTimesButton.addEventListener("click", function() {
 		drawMoreInputs("time", groupNum);
 	})
@@ -224,6 +235,7 @@ function drawGroup(groupNum, group) {
 	groupDiv.appendChild(dayDiv);
 
 	groupDiv.appendChild(blankLineElement());
+	groupDiv.appendChild(document.createElement("hr"));
 	groupDiv.appendChild(blankLineElement());
 	allGroupsDiv.appendChild(groupDiv);
 }
@@ -294,7 +306,7 @@ function textInputDiv(type, groupNum, value, parentDiv) {
 
 	let div = document.createElement("div");
 	div.appendChild(newInput);
-	div.appendChild(deleteElementButton(div, parentDiv));
+	div.appendChild(deleteElementButton(div, parentDiv, "x"));
 	div.appendChild(blankLineElement());
 
 	return div;
@@ -318,7 +330,7 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	div.appendChild(endText);
 
 	div.appendChild(timeInputElement("end", endTime, groupNum, pairNum));
-	div.appendChild(deleteElementButton(div, parentDiv));
+	div.appendChild(deleteElementButton(div, parentDiv, "x"));
 
 	return div;
 }
@@ -348,8 +360,15 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 	newButton.dataset.group = groupNum;
 	newButton.dataset.type = day + "Button";
 
-	newButton.addEventListener('click', function() {
+	newButton.addEventListener("click", function() {
 		swapClicked(newButton, activeButton);
+	});
+
+	newButton.addEventListener("mouseenter", function() {
+		hover(newButton);
+	});
+	newButton.addEventListener("mouseout", function() {
+		unhover(newButton);
 	});
 
 	if (clickedButton) {
@@ -362,15 +381,17 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 }
 
 // input is the element that should be deleted and the div it belongs to
-function deleteElementButton(element, div) {
+// text is either "x" for most buttons or "delete group" for deleting the group
+function deleteElementButton(element, div, text) {
 	let newButton = document.createElement("button");
-	newButton.innerHTML = "x";
+	newButton.innerHTML = text;
+	newButton.className = "hoverable";
 
 	newButton.addEventListener('click', function() {
 		div.removeChild(element);
 	});
 	// set the correct color by:
-	unclicked(newButton);
+	// unclicked(newButton);
 
 	return newButton;
 }
@@ -386,17 +407,6 @@ function paragraphElement(text) {
 	newPara.innerText = text;
 	return newPara;
 }
-
-// function deleteElement(div, element) {
-// 	div.removeChild(element);
-// }
-
-// // Find all elements with data-columns="3"
-// const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
-// // You can then iterate over the results
-// threeColumnArticles.forEach((article) => {
-//   console.log(article.dataset.indexNumber);
-// });
 
 
 // sites is an array of 
@@ -414,47 +424,65 @@ function Group(active, sites, excludes, times, days) {
 // then do const group1 = new Group(………)
 
 
-// CURRENTLY ISN'T QUITE WORKING, NEEDS TO CLICK TWICE TO START IT FLIPPING BACK AND FORTH
-		// to fix it, change to be if (green) else {..turn green.} bc when it starts off green 
-		// it's always the right color but for some reason drawing a blank button makes it wrong sometimes
-// pass in button, check if it's already blue or green and does opposite
-		// if start it off by clicked or unclicked then it works! :D
-function swapClicked(button, activeButton) {
-	console.log(button.style.background);
-	// when doing comparisons it must be rgb for some reason and not hex……
-	if (button.style.background == "rgb(106, 139, 166)") {
-		clicked(button, activeButton);
-		console.log("unclicked!");
-	} else {
-		unclicked(button, activeButton);
-		console.log("clicked!");
-	}
-	button.style.color = "#e5e5e5";
-}
+const green = "rgb(35, 149, 96)";
+const blue = "#6384A1";
+const white = "#e5e5e5";
 
-// change color of the button to be green
-// pass in the document.getElementById
+// pass in button, check if it's already blue or green and does opposite
+function swapClicked(button, activeButton) {
+	if (buttonOn(button)) {
+		unclicked(button, activeButton);
+	} else {
+		clicked(button, activeButton);
+	}
+}
 
 // if it's the button saying if it's active then change the text to "on"
 function clicked(button, activeButton) {
-	// button.style.background = "#239560"; // darker more contrasting green! (not too contrasting)
-	button.style.background = "#38ec9c";
+	button.style.background = green;
 	if (activeButton) {
 		button.innerHTML = "on";
 	}
+	button.className = "onhover";
 }
 
 // change color of button to be default blue
 // if it's the button saying if it's active 
 // then change the text to "on"
 function unclicked(button, activeButton) {
-	// button.style.background = "#6384A1"; // darker more contrasting blue! (not too contrasting)
-	button.style.background = "#6a8ba6";
+	button.style.background = blue; 
 	if (activeButton) {
 		button.innerHTML = "off";
 	}
 }
 
+// returns true if the button is on (is green) 
+// and false if not (is blue)
+function buttonOn(button) {
+	if (button.style.background == green) {
+		return true;
+	} 
+	return false;
+}
+
+function hover(button) {
+	// if is green: 
+	if (button.style.background == green) {
+		button.style.color = green;
+	} else if (button.style.background == blue) {
+		button.style.color = blue;
+	}
+	button.style.background = white;
+}
+
+function unhover(button) {
+	if (button.style.color == blue) {
+		button.style.background = blue;
+	} else if (button.style.color == green) {
+		button.style.background = green;
+	}
+	button.style.color = white;
+}
 
 // idea!! classes and then just iterate through those that have that class! so keep making groups :D
 // specific listener for each save button?? or only one save button at the top??? let them delete groups 2+
