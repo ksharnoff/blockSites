@@ -10,10 +10,15 @@
 // to do: reorder the functions written to be better! 
 // to test: make an on update that writes config to storage & then have current block check ofc! 
 
-const currentBlock = {
-	sites: ["youtube.com", "wikipedia.org"],
-	exclude: ["music.youtube.com"]
-};
+// currently working on::::
+	// getCurrentBlock working --- async function!! then will be good :D
+	// also need to fetch config from storage!
+
+
+// const currentBlock = {
+// 	sites: ["youtube.com", "wikipedia.org"],
+// 	exclude: ["music.youtube.com"]
+// };
 
 const config = {
 	groups: [
@@ -62,6 +67,7 @@ chrome.storage.onChanged.addListener(function(changes) {
 // when the chrome extension is installed or updated then:
 chrome.runtime.onInstalled.addListener(function(details) {
 	if (details.reason === "install") {
+		chrome.storage.clear();
 		// do some stuff on install
 		// maybe have it console.log the bytes curretnly in storage?? would be fun :D
 	} else {
@@ -184,16 +190,14 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 	console.log("ran write current block");
 	chrome.storage.local.set({
 		currentBlock: {
-			"sites": sitesBlock, 
-			"exclude": sitesExclude
+			"sites": sitesBlockArr, 
+			"exclude": sitesExcludeArr
 		}
 	});
 	if (chrome.runtime.lastError) {
 	 	console.log("chrome runtime last error exists! failed to write to storage!");
         console.log(chrome.runtime.lastError);
     } 
-
-    chrome.storage.sync.get(null, function (data) { console.log("all storage:" + data) });
 }
 
 // takes in input of when to alarm and also nowTime from 0 to 2359
@@ -201,7 +205,6 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 
 // the variables here should be const!!! once everything else in code is wroking try it :D
 function createAlarm(expireMinutes, nowMinutes) {
-	console.log("Creating alarm! expire at" + expireMinutes + " now is " + nowMinutes);
 	// should expire at midnight at the latest, if expire time is smaller 
 	// than now time that means the next day, so it should be midnight
 	// midnight is 23hours, 59 minutes which is 1,439 minutes
@@ -212,7 +215,7 @@ function createAlarm(expireMinutes, nowMinutes) {
 	// the alarm will be 1 minute late in order to garentee that it happens, imagine the scneario of an alarm begin set for 0 minutes and it not working right
 	let minutesAlarm = 1 + expireMinutes-nowMinutes;
 
-	console.log("will expire in " + minutesAlarm);
+	console.log("Creating alarm! expire at " + expireMinutes + " now is " + nowMinutes + "; will expire in " + minutesAlarm);
 
 	chrome.alarms.create("updateBlockingAlarm", { 
 		delayInMinutes: minutesAlarm
@@ -231,30 +234,55 @@ function dateToTime(date) {
 	return date.getMinutes() + (date.getHours() * 100);
 }
 
+
+let currentBlock = null;
+// the following function does not work reliably!! look into async functions and how to set currentBlock equal to the object that is pulled out of storage!!
+// right now it fails to pull three times, saying null and then prints three times "works" that the async finally ran???!?!!!! when used to not have the curr.then line and just returned curr it worked more often (not all the time though)
+function getCurrentBlock() {
+	let curr = chrome.storage.local.get("currentBlock");
+	// return curr;
+	curr.then(function(result) {console.log("works!"); currentBlock = result;}, null);
+}
+
+
 // IDEA: make the includes more efficient???
 // easy thing to make more efficient is define when to start looking in the string...
 function validSite(tab) {
+	getCurrentBlock();
+	console.log("current block: ");
+	console.log(currentBlock);
 
-	// need to get currentBlock from storage!! 
-	// TO DO TO DO TO DO TO DO
+	if (currentBlock == null) {
+		console.log("Tried to fetch currentBlock from storage for validSite, it is null");
+		return false; 
+	}
 
 	const url = tab.url;
 
+	excluded = false;
+
 	for (let s of currentBlock.sites) {
 		if (url.includes(s)) {
+			excluded = true;
 			for (let e of currentBlock.exclude) {
 				if (url.includes(e)) {
-					continue;
+					excluded = true;
+					break;
 				}
 			}
-			return true;
+			if (!excluded) {
+				console.log(url);
+				console.log(s);
+				return true;
+			}
 		}
 	}
 	return false;
 }
 
 function blockTab(tabId) {
-	chrome.tabs.update(tabId, {url: "../blocked.html", active: true});
+	// chrome.tabs.update(tabId, {url: "../blocked.html", active: true});
+	console.log("block!!");
 }
 
 
@@ -262,7 +290,8 @@ const test = true;
 
 // tab gets updated, checks if should block, if it should then it does 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
-	if (!test) {
+	console.log("tab updated " + tab.url);
+	if (test) {
 		if (validSite(tab)) {
 			blockTab(tabID);
 		}
