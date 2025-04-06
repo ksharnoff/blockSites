@@ -1,19 +1,18 @@
 
 // two objects: config in sync/local storage and currently blocked websites in session
-// make the currently blocked websites object have an expiratoin time; when to recheck all of the groups to see what currently should be blocked; should be the earliest end time of the previously currently blocked websites
+// make the currently blocked websites object have an expiration time; when to recheck all of the groups to see what currently should be blocked; should be the earliest end time of the previously currently blocked websites
 
 // do not let them store 10pm to 3am!!! when writing to storage, write that as 10pm to 11:59 then mightnight to 3am!!
 
-// have on update of extension all alarms cleared + updateCurrentBlock!
-
-
-// to do: reorder the functions written to be better! 
+// to do: reorder the functions within this file written to be better! !!
 // to test: make an on update that writes config to storage & then have current block check ofc! 
 
 // currently working on::::
-	// getCurrentBlock working --- async function!! then will be good :D
-	// also need to fetch config from storage!
+	// need to fetch config from storage!!!
+	// (write config to storage from settings.js --- maybe on install make a blank config in storage???? ensure there always exists one? or don't care...)
 
+// next steps after this is to edit the settings page so that it gets populated 
+// from the storage and also so that it can write to the storage 
 
 // const currentBlock = {
 // 	sites: ["youtube.com", "wikipedia.org"],
@@ -72,6 +71,10 @@ chrome.runtime.onInstalled.addListener(function(details) {
 		// maybe have it console.log the bytes curretnly in storage?? would be fun :D
 	} else {
 		console.log("updated!!!");
+		// FAILURE:::
+		// chrome.storage.getBytesInUse(null, function(bytesInUse){
+		// 	console.log(bytesInUse);
+		// });
 		updateCurrentBlock();
 	}
 });
@@ -235,24 +238,37 @@ function dateToTime(date) {
 }
 
 
-let currentBlock = null;
-// the following function does not work reliably!! look into async functions and how to set currentBlock equal to the object that is pulled out of storage!!
-// right now it fails to pull three times, saying null and then prints three times "works" that the async finally ran???!?!!!! when used to not have the curr.then line and just returned curr it worked more often (not all the time though)
-function getCurrentBlock() {
-	let curr = chrome.storage.local.get("currentBlock");
-	// return curr;
-	curr.then(function(result) {console.log("works!"); currentBlock = result;}, null);
-}
-
-
 // IDEA: make the includes more efficient???
 // easy thing to make more efficient is define when to start looking in the string...
+// it would be better if the first bit (fetching currentBlock 
+// 
+// from storage) is in its own function but that would make 
+// the promises more complicated,, when I do that it always 
+// has currentBlock set to null
+// still weird stuff with the promises!!!
+// I update tab, then it has storedCurrBlock be checked to null twices and 
+// then successfuly pulled from storage twice, then update tab again and 
+// it will be succesfully pull storedCurrBlock from storage 5 times???? why???? 
+// weird??? load tab again and it is not increases by two each time,,,,, 
+// something funny going on with the promises.......;; why is it trying to 
+// pull several times when the functoin validSite is only called once???
+let storedCurrBlock = null;
 function validSite(tab) {
-	getCurrentBlock();
-	console.log("current block: ");
-	console.log(currentBlock);
+	let currBlockPromise = chrome.storage.local.get("currentBlock");
 
-	if (currentBlock == null) {
+	currBlockPromise.then(
+		function(object) {
+			console.log("successfully pulled currentblock from storage!");
+			storedCurrBlock = object;
+		},
+		function (error) {
+			console.log("Error in getting currentBlock from storage");
+			console.log(error);
+			storedCurrBlock = null;
+		}
+	);
+
+	if (storedCurrBlock == null) {
 		console.log("Tried to fetch currentBlock from storage for validSite, it is null");
 		return false; 
 	}
@@ -261,18 +277,16 @@ function validSite(tab) {
 
 	excluded = false;
 
-	for (let s of currentBlock.sites) {
+	for (let s of storedCurrBlock.currentBlock.sites) {
 		if (url.includes(s)) {
-			excluded = true;
-			for (let e of currentBlock.exclude) {
+			excluded = false;
+			for (let e of storedCurrBlock.currentBlock.exclude) {
 				if (url.includes(e)) {
 					excluded = true;
 					break;
 				}
 			}
 			if (!excluded) {
-				console.log(url);
-				console.log(s);
 				return true;
 			}
 		}
@@ -291,6 +305,14 @@ const test = true;
 // tab gets updated, checks if should block, if it should then it does 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 	console.log("tab updated " + tab.url);
+
+
+	// no need to check if a tab should be blocked if it cannot 
+	// be blocked or if it was already blocked
+	if (tab.url.includes("chrome://extension")) {
+		return;
+	}
+
 	if (test) {
 		if (validSite(tab)) {
 			blockTab(tabID);
