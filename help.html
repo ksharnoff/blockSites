@@ -1,5 +1,5 @@
 <!-- 
-	Help information. Can be launched from the popup or from th settings page
+	Help information. Can be launched from the popup or from the settings page
  -->
 
 <!DOCTYPE html>
@@ -9,45 +9,39 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<title> blocked site </title>
-		<link rel="stylesheet" href="style.css">
+		<link rel = "stylesheet" href="style.css">
 	</head>
 	<body style = "width: 97%;">
-		<img src = "icon.png" alt = "green square, same as the block sites browser extension icon">
-		<h2 style="margin: 1px;">block sites help! information</h2>
+		<img src = "icon.png" alt = "green square, the block sites browser extension icon">
+		<h2 style = "margin: 1px;"> block sites help information </h2>
 
 		<br>
-		<h3> Question: Do I have to press save? (on the settings page)</h3>
+		<h3> Question: Do I have to press save? (on the settings page) </h3>
 		<p > Once you press save then all the text you wrote in the inputs and all the buttons that you pressed will be saved to your chrome local storage. It only saves with the save button so I don't have to keep writing stuff to storage constantly. (more efficient and easier) </p>
 
-
 		<br>
-		<h3> Question: Why are there different groups? How should I distinguish my groups?</h3>
-		<p> Different groups should have different sites that are at different times. For example, if I wanted to block twitter in the morning and youtube at night, I would use two different groups. If I wanted to block twitter and youtube in the morning and at night, I would use one group. If I wanted to block youtube in the morning and at night, but twitter only in the morning, I would use two groups. </p>
+		<h3> Question: Why are there different groups? How should I distinguish my groups? </h3>
+		<p> Different groups should have different sites that are at different times. For example, if I wanted to block Twitter only in the morning and YouTube only at night, I would use two different groups. If I wanted to block Twitter and YouTube in the morning and at night, I would use one group. If I wanted to block YouTube in the morning and at night, but Twitter only in the morning, I would use two groups. </p>
 
 		<br>
 		<h3> Question: What does the "block all sites" button do? </h3>
 		<p> This button accesses all the websites from every group that you have active (selected green for on) and blocks those websites from midnight until midnight. </p>
 
-		<br>
-	 	<h3> Question: How do I delete a site or time input field on the settings page? </h3>
-	 	<p>	You cannot. If the input field for a site is empty (no text written), then it will not be saved to storage and when you next visit the settings page it will not be there. If the start time is the same as the end time, it will similarly not be recorded or displayed. </p>
-
 	 	<br>
 		<h3> Question: I made a change on settings, pressed the save button, reloaded, and the page hasn't changed? </h3>
-		<p> Once you click the save button, all your new settings are collected and given to Chrome storage. This can sometimes be slow, depending what else you're doing on Chrome. It will be written, but not instantly. Whenever you reload the settings page, it gets whatever data is already in Chrome's storage, which can be not up to date. </p>
+		<p> Once you click the save button, all your new settings are collected and given to Chrome to be written to the storage. This can sometimes be slow, depending what else Chrome is doing. Whenever you reload the settings page, it gets whatever data is already in Chrome's storage, which can be not up to date. If you edit and save a non-up-to-date settings page, it will overwrite anything you saved previously. </p>
 
 		<br>
 		<h3> Question: Can I change / add to the photos that show on the blocked site? </h3>
 		<p> YES! First, move your image into the folder titled "images" within the "blockSites" extension folder. Then, put the name of those images and some alt text in the file "blocked.js". There are more instructions of where exactly to write those within that file. </p>
 
 		<br>
-	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking? </h3>
-	 	<p>	It won't block. If, in the same time period, you have "youtube.com" in the block list but also you have "youtube.com" in the exclude list, it will not block. What sites block what depends on being in the same time range, not the same group. </p>
-
+		<h3> Question: What does the "I changed timezones / recheck" button do? </h3>
+		<p> The way that the code works to see what websites should be blocked is by using the current time and calculating when it will need to next check (when another site should start being blocked or the current ones should become unblocked). This calculation for re-checking is in minutes. Therefore, if you change time zones before the next check should happen, it will be off. The button manually makes it recalculate what sites should be currently blocked. </p>
 
 		<br>
-		<h3> Question: Can I have more than 8 groups? </h3>
-		<p> Yes -- ask Kezia and they will send you a file with as many groups as you like. I coded it poorly so I have to copy / paste each save button. </p>
+	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking, what will happen? </h3>
+	 	<p>	The website will not block. If, in the same time period, you have "youtube.com" in the block list but also you have "youtube.com" in the exclude list, it will not block. The sites being in the same time period is the only thing that matters, not what groups they originated from. </p>
 
 	</body>
 </html>
