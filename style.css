@@ -18,12 +18,12 @@ button {
 	font-family: Monaco, monospace;
 	margin: 5px;
 }
-button:hover {
+.hoverable:hover {
 	background-color: #e5e5e5;
-	color: #6a8ba6;
+	color: #6384A1;
 }
 input {
-	background-color: #6a8ba6;
+	background-color: #6384A1;
 	color: #e5e5e5;
 	font-size: 16px;
 	font-family: Monaco, monospace;
@@ -33,6 +33,7 @@ input {
 input::placeholder{
 	color: #264E6E;
 }
+
 /* 
 	white: #e5e5e5
 	a bit darker gray of white: #C9C9C9
@@ -40,4 +41,9 @@ input::placeholder{
 	lavendre: rgb(149, 136, 204)
 	blue: rgb(106, 139, 166) OR #6a8ba6
 	green of icon or on button: #38ec9c
+
+
+	new colors: 
+	blue: #6384A1
+	green: rgb(35, 149, 96) OR "#239560"
 */

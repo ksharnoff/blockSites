@@ -1,20 +1,29 @@
 
-// do not let them store 10pm to 3am!!! when writing to storage, write that as 10pm to 11:59 then mightnight to 3am!!
-// also if the input field for website is empty,, innerhtml === " " or "" then don't write it down,, if start & end time are same then don't write them down
+// do not let them store 10pm to 3am!!! when writing to storage, write that as 
+// 10pm to 11:59 then mightnight to 3am!!
+// also if the input field for website is empty,, innerhtml === " " or "" then don't 
+// write it down,, if start & end time are same then don't write them down?? (or set to all day??)
+// if no times given,, then block entire day!??
+// save group even if incomplete! 
 
-// ; add block all sites forever button; write to storage!! figure out classes being made and buttons to add new groups and cycle through them when you hit save!!
-
-// give everything titles so that they are clear to screen readers!!
+// ; add block all sites forever button; write to storage!!!
 
 // add to settings html a <p> saying that things have not loaded in correctly 
 // as the default thing that then will be made invisable once things have 
 // finished loading in.... + put all of them into a giant all groups div to 
 // add more groups onto and make the div invisable until finished loading from config. 
 
-// move blockAllSites from the popup to the top left of settings.html and make it a toggle
-
-// idea: make the blue and green swapping buttons have no hover behavor
-
+// TO DO:
+	// save input when press save button
+	// add comments for all the functions // reorder them
+	// make the button color changer functions return so it doesn't set???
+	// load config from file when window loading
+	// make blockAllSites button on top left of settings.html and write to 
+			// file (after pressing save)
+	// line up some divs to be horizontal (sites on right, else on left? or 
+			// just sites to block on right, everything else on left? experiment!)
+	// give everything titles so they are clear to screen readers
+	// add button in settings html to launch help page!
 
 const group1 = new Group(true, 
 	["wikipedia.org", "mail.google.com"], 
@@ -28,29 +37,28 @@ const group2 = new Group(true,
 	[["10:00", "06:13"],["12:59", "14:39"]],
 	[true, false, true, true, true, false, true]);
 
-// where group3 is null....??,, nothing in the group! 
-// will not actually store in storage a null group but I will use a
-// null call to draw a blank group!
-const group3 = null;
+const config = {
+	groups: [group1, group2, null],
+	blockAll: false
+}
 
-const config = [group1, group2, group3];
 
 // should be const?
 let allGroupsDiv = document.getElementById("allGroupsDiv");
 
-// MAKE SURE THAT THE DAY BUTTONS ARE CORRECTLY COLORED AND THAT ALL THE FIELDS ARE FILLED IN!!
+
+// if config is null then write two blank groups to the page!! 
+
 window.addEventListener("load", function() {
-	let numGroups = config.length;
+	let numGroups = config.groups.length;
 	for (let i = 0; i < numGroups; i++) {
-		drawGroup(i + 1, config[i])
+		drawGroup(i + 1, config.groups[i])
 	}
 	allGroupsDiv.dataset.groupCount = numGroups;
 
 
 	// fill in all the input fields & buttons from storage....
-
 	// aka just call fillPage(); and fill page will need to sort out from storage...
-	// maybe break up the componnents more from drawBlankGroup?
 });
 
 const testingbutton = document.getElementById("testingButton");
@@ -76,7 +84,6 @@ saveButton.addEventListener("click", function() {
 	console.log(allGroupsDiv.children);
 
 
-
 	const group1Elements = document.querySelectorAll('[data-group = "1"]');
 	group1Elements.forEach(function(element) {
 		console.log(element);
@@ -84,7 +91,8 @@ saveButton.addEventListener("click", function() {
 	});
 });
 
-// returns a static nodeList whre changes in the nodeList do not affect the DOM!
+// returns a static nodeList where changes in the nodeList do not affect the DOM!
+
 // // Find all elements with data-columns="3"
 // const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
 // // You can then iterate over the results
@@ -98,12 +106,12 @@ moreGroups.addEventListener("click", function() {
 	if (isNaN(newGroupCount)) {
 		console.log("Failed to turn group count in allGroupsDiv into an int");
 		// because we still want to make the div but it needs to have a unique 
-		// id counter, we do a random number from 500 to 10,500, extemely 
-		// unlikely to exist already. We do plus 500 for if they already 
+		// id counter, we do a random number from 10000 to 11000, extemely 
+		// unlikely to exist already. We do plus 1000 for if they already 
 		// have a bunch of groups so it cannot overlap. I would not assume 
-		// that people have more than 500 groups.
+		// that people have more than 1000 groups.
 		// also because this starts it as an int, this will fix future iterations
-		newGroupCount = 10000*Math.random() + 500;
+		newGroupCount = Math.floor(10000*Math.random()) + 1000;
 	} else {
 		newGroupCount++;
 	}
@@ -138,7 +146,7 @@ function drawGroup(groupNum, group) {
 	// therefore, should have empty strings for all the values which 
 	// the helper functions will correctly interpret
 	if (group == null) {
-		group = new Group(true, ["", ""], [""], [["", ""]], [true, true, true, true, true, true, true])
+		group = new Group(true, ["", ""], [""], [["", ""]], [false, true, true, true, true, true, false])
 	}
 
 	let groupDiv = document.createElement("div");
@@ -224,7 +232,7 @@ function drawGroup(groupNum, group) {
 
 	groupDiv.appendChild(blankLineElement());
 
-	groupDiv.appendChild(paragraphElement("days blocked:"));
+	groupDiv.appendChild(paragraphElement("days blocked: (green)"));
 
 	// right now does not look right with no spaces between them! 
 	let dayDiv = document.createElement("div");
@@ -372,8 +380,10 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 	});
 
 	if (clickedButton) {
+		newButton.dataset.clicked = "on"; 
 		clicked(newButton, activeButton);
 	} else {
+		newButton.dataset.clicked = "off"; 
 		unclicked(newButton, activeButton);
 	}
 
@@ -390,8 +400,6 @@ function deleteElementButton(element, div, text) {
 	newButton.addEventListener('click', function() {
 		div.removeChild(element);
 	});
-	// set the correct color by:
-	// unclicked(newButton);
 
 	return newButton;
 }
@@ -428,85 +436,78 @@ const green = "rgb(35, 149, 96)";
 const blue = "#6384A1";
 const white = "#e5e5e5";
 
-// pass in button, check if it's already blue or green and does opposite
+// pass in button, check if it's already on (green) or off (blue) and 
+// changed to the opposite color
+// 
+// If the button is being hovered over when this function is called, 
+// then it will no longer be inverted coloring. This is on purpose 
+// so that the change in color between green and blue is more clear 
+// than just the small text changing. 
 function swapClicked(button, activeButton) {
-	if (buttonOn(button)) {
+	if (button.dataset.clicked == "on") {
 		unclicked(button, activeButton);
 	} else {
 		clicked(button, activeButton);
 	}
 }
 
-// if it's the button saying if it's active then change the text to "on"
+// Change the colors to green background! Redefining the text color 
+// here in case they were hovering after clicking so it updates 
+// instead of staying blue. If it is an "active button" for setting
+// a group being active or not, the text is swapped to "on"
 function clicked(button, activeButton) {
 	button.style.background = green;
+	button.style.color = white;
+
 	if (activeButton) {
 		button.innerHTML = "on";
 	}
 	button.className = "onhover";
+	button.dataset.clicked = "on"
 }
 
-// change color of button to be default blue
-// if it's the button saying if it's active 
+// Change color of button to be default blue
+// If it's the button saying if it's active, 
 // then change the text to "on"
 function unclicked(button, activeButton) {
 	button.style.background = blue; 
+	button.style.color = white; 
+
 	if (activeButton) {
 		button.innerHTML = "off";
 	}
+	button.dataset.clicked = "off"
 }
 
-// returns true if the button is on (is green) 
-// and false if not (is blue)
-function buttonOn(button) {
-	if (button.style.background == green) {
-		return true;
-	} 
-	return false;
-}
-
+// Inverts the color of a button when mouse event is 
+// fired from something hovering over it
 function hover(button) {
 	// if is green: 
-	if (button.style.background == green) {
+	if (button.dataset.clicked == "on") {
 		button.style.color = green;
-	} else if (button.style.background == blue) {
+	} else {
 		button.style.color = blue;
 	}
 	button.style.background = white;
+
+
+	// the following code does work when it's slow but does not work 
+	// when changing lots of buttons and moving in and out, some get 
+	// stuck on an inverted stage! 
+
+	// let text = button.style.color;
+	// let background = button.style.background;
+
+	// button.style.color = background;
+	// button.style.background = text;
 }
 
+// Sets the inverted colors back to normal
 function unhover(button) {
-	if (button.style.color == blue) {
-		button.style.background = blue;
-	} else if (button.style.color == green) {
+	if (button.dataset.clicked == "on") {
 		button.style.background = green;
+	} else {
+		button.style.background = blue;
 	}
 	button.style.color = white;
 }
-
-// idea!! classes and then just iterate through those that have that class! so keep making groups :D
-// specific listener for each save button?? or only one save button at the top??? let them delete groups 2+
-
-// make sure that if it's incognito it doesn't do anything!!!
-
-// chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
-// 	// chrome.tabs.create({ url: chrome.runtime.getURL("../blocked.html")});
-// 	console.log("new tab updated!");
-// 	console.log(tabID);
-// 	console.log(changeInfo);
-// 	console.log(tab);
-
-// 	if (tab.url.includes("x.com")) {
-// 		chrome.tabs.update(tab.id, {
-// 			url: "../blocked.html",
-// 			active: true
-// 		});
-// 	}
-// });
-
-// chrome.tabs.onActivated.addListener(function(activeInfo) {
-// 	console.log(activeInfo.tabId);
-// 	console.log(activeInfo.windowId);
-// 	console.log("testing testing 123");
-// 	console.log("onactivated!!");
-// });
