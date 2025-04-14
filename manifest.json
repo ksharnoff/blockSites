@@ -19,6 +19,7 @@
    },
 	"permissions": [
 		"storage", // for telling when a tab is updated & that tab's components  
-		"tabs" // for storing the blocking groups in storage
+		"tabs", // for seeing when a tab is updated (to then check if allowed)
+		"alarms" // to change what sites are allowed when the current expires 
 	]
 }
