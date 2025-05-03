@@ -15,25 +15,31 @@
 // just nothing will work fine because we're checking for null!
 
 
-// const config = {
-// 	groups: [
-// 		{
-// 			active: true, 
-// 			sites: ["wikipedia.org", "mail.google.com"],
-// 			exclude: ["en.wikipedia.org/wiki/California"],
-// 			times: [[10, 190],[1260, 1414]],
-// 			days: [true, true, false, true, true, true, true]
-// 		},
-// 		{
-// 			active: false, 
-// 			sites: ["facebook.com", "gmail.com"],
-// 			exclude: [],
-// 			times: [[10, 613],[1290, 1439]],
-// 			days: [true, false, true, true, true, false, true]
-// 		},
-// 	],
-// 	blockAll: true
-// };
+// try writing config to stroage with the testing button in settings.js ---- right now,
+// updateCurrentBlock cannot successfully get the config file from storage! is always 
+// nulll,,,, but the config successfully shows up when the chagned storage is printed....
+
+
+
+const configtoWrite = {
+	groups: [
+		{
+			active: true, 
+			sites: ["wikipedia.org", "mail.google.com"],
+			exclude: ["en.wikipedia.org/wiki/California"],
+			times: [[0, 190],[1260, 1435]],
+			days: [true, true, false, true, true, true, true]
+		},
+		{
+			active: false, 
+			sites: ["facebook.com", "gmail.com"],
+			exclude: [],
+			times: [[5, 613],[1290, 1439]],
+			days: [true, false, true, true, true, false, true]
+		},
+	],
+	blockAll: false
+};
 // each group should have the following variables:
 	// active (bool), 
 	// sites (array of strings), 
@@ -44,10 +50,15 @@
 		// start time is always less than (before than) second time
 	// days (7 length array of ints)
 
+const tempCurrentBlock = {
+	sites: ["wikipedia.org", "mail.google.com"], 
+	exclude: ["en.wikipedia.org/wiki/California"]
+}
+
 
 // if alarm goes off or the config storage gets updated! 
 chrome.alarms.onAlarm.addListener(function(alarm) {
-	console.log("alarm sounded!!!");
+	console.log(">>>>>>>>alarm sounded!!!");
 	updateCurrentBlock();
 });
 
@@ -63,13 +74,14 @@ chrome.storage.onChanged.addListener(function(changes) {
 
 // when the chrome extension is installed or updated then:
 chrome.runtime.onInstalled.addListener(function(details) {
+	console.log("on installed listerner");
 	if (details.reason === "install") {
 		console.log("installed!");
 		// maybe shouldn't clear storage on install? what if 
 		// re-installing -- why would that happen?? -- maybe just 
 		// clear currentBlock from storage! 
 		// OR/AND just set currentBlockStor = null, and configStor = null
-		chrome.storage.local.clear();
+		// chrome.storage.local.clear();
 
 		clearAlarmsPrintBytesUsed();
 
@@ -79,16 +91,24 @@ chrome.runtime.onInstalled.addListener(function(details) {
 		// automatically open the settings page! 
 		chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
 	} else {
-		// MAYBE set currentBlockStor = null, and configStor = null
 		// maybe in production also have it open settings back on update! 
-		/// bc can imagine owuld only ever press update if user changed 
+		/// bc can imagine would only ever press update if user changed 
 		// the code or redownloaded new release,, in which case it makes
 		// sense to view the settings page again!
+
+
+		// code for writing in a currentblock for testing! 
+		// chrome.storage.local.set({"currentBlock": tempCurrentBlock});
+
+		// code for writing in a config for testing! 
+		// chrome.storage.local.set({"config": configtoWrite});
+
 		console.log("updated!!!");
 
 		clearAlarmsPrintBytesUsed();
 		updateCurrentBlock();
 
+		// testing code!!! prints all items in storage... (weird it doesn't need promise)
 		// chrome.storage.local.get(null, function(items) {
 		// 	console.log("all items in storage:");
 		// 	console.log(items);
@@ -109,36 +129,42 @@ function clearAlarmsPrintBytesUsed() {
 chrome.storage.onChanged.addListener(function(changes, areaName) {
 	console.log("!!!!storage changed!");
 	console.log(changes);
+	updateCurrentBlock();
 	}
 )
 
-// figures out what sites should be blocked now given the day and time
-// calls that those sites are written to storage
+// To coordinate the functions about updating the current block
+// Mainly an async function to get config from storage and then to calculate
+// calculate what to block and when and then write currentBlock to storage. 
+function updateCurrentBlock() {
+	getConfig().then(function(value) {
+		if (value == null) {
+			console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
+			// if there isn't any stored config, then set an alarm for hour to recheck! 
+			createErrorAlarm(60);
+			return; 
+		} 
+		calculateBlock(value);
+	})
+}
+
+// returns config object from storage or null if it is not in storage
+async function getConfig() {
+	console.log("async trying to get config!");
+	let result = await chrome.storage.local.get("config");
+	if (result == undefined) {
+		return null;
+	}
+	return result.config;
+}
+
+// Takes in the config item from storage. 
+// Figures out what sites should be blocked now given the day and time
 // calculates when an alarm should next be called (so that is is O(n) not O(2n)) also, 
 // by when the current site times expire. 
-//
-// would be better to seperate out the get config to a different function! 
-let storedConfig = null; 
-function updateCurrentBlock() {
-
-	chrome.storage.local.get("config", function(items) {
-		if (items != null) {
-			storedConfig = items;
-		}
-	})
-
+function calculateBlock(config) {
 	console.log("config:");
-	console.log(storedConfig);
-
-	const today = new Date();
-	const nowMinutes = timeToMinutes(dateToTime(today));
-
-	if (storedConfig == null) {
-		console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
-		// if there isn't any stored config, then set an alarm for midnight to recheck! 
-		createAlarm(1439, nowMinutes);
-		return; 
-	}
+	console.log(config);
 
 	// array of websites to be written to storage to be blocked
 	let sitesBlock = new Map();
@@ -152,13 +178,15 @@ function updateCurrentBlock() {
 			sitesExclude = arrayAddToMap(sitesExclude, g.exclude);
 		}
 		// alarm for midnight!
-		createAlarm(-1, nowMinutes);
+		// (if they change settings or blockAll button, new alarm will go off then)
+		createErrorAlarm(-1);
 		writeCurrentBlock(sitesBlock, sitesExclude);
 		return;
 	}
 
-
+	const today = new Date();
 	const day = today.getDay(); // Sunday is 0, Saturday is 6
+	const nowMinutes = timeToMinutes(dateToTime(today));
 
 	// firstFinish is the first time that any of the websites currently 
 	// blocking will expire being blocked, and when the alarm to 
@@ -184,6 +212,8 @@ function updateCurrentBlock() {
 
 				// in order to be more efficient and not try to add same 
 				// websites from same group, use addedGroup boolean
+				// because multiple opportunities to add each group
+				// as all of the times are checked
 				if (!addedGroup) {
 					sitesBlock = arrayAddToMap(sitesBlock, g.sites);
 					sitesExclude = arrayAddToMap(sitesExclude, g.exclude);
@@ -218,6 +248,7 @@ function arrayAddToMap(map, arr) {
 // writes to storage the current blocked,, takes in two maps as input 
 // and writes them down as arrays
 function writeCurrentBlock(sitesBlock, sitesExclude) {
+
 	let sitesBlockArr = [];
 	let sitesExcludeArr = [];
 
@@ -230,6 +261,11 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 	});
 
 	console.log("ran write current block");
+	console.log("sites:");
+	console.log(sitesBlockArr);
+	console.log("exclude:");
+	console.log(sitesExcludeArr);
+
 	chrome.storage.local.set({
 		currentBlock: {
 			"sites": sitesBlockArr, 
@@ -242,10 +278,30 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
     } 
 }
 
+// easy function that will set nowMinutes in order to
+// call createAlarm to have the alarm expire at midnight or in a few minutes
+// 
+// or maybe I shoud have a global nowMinutes variable starting from the wakeup 
+// of this background js????
+function createErrorAlarm(time) {
+	const nowMinutes = timeToMinutes(dateToTime(new Date()));
+
+	let expire;
+	if (time < 0) {
+		expire = -1
+	} else {
+		expire = nowMinutes + time;
+	}
+	console.log("called create alarm on expire, nowminutes:");
+	console.log(expire);
+	console.log(nowMinutes);
+	createAlarm(expire, nowMinutes);
+}
+
+// the variables here should be const!!! once everything else in code is working try it :D
+//
 // takes in input of when to alarm and also nowTime from 0 to 2359
 // creates an alarm for that time! 
-
-// the variables here should be const!!! once everything else in code is wroking try it :D
 function createAlarm(expireMinutes, nowMinutes) {
 	// should expire at midnight at the latest, if expire time is smaller 
 	// than now time that means the next day, so it should be midnight
@@ -279,51 +335,65 @@ function dateToTime(date) {
 }
 
 
-// IDEA: make the includes more efficient???
-// easy thing to make more efficient is define when to start looking in the string...
-// it would be better if the first bit (fetching currentBlock) was its own function
-// 
-// now that it is a callback it only runs once! :D
-// will return null the first two times that a tab is updated and then the 
-// real thing on the third one -- then all after have the correct currentBlock!
-// also when most webpags reload / go to a different page it sends several 
-// page updates so it's fine :D
-let storedCurrBlock = null;
-function validSite(tab) {
-
-	chrome.storage.local.get("currentBlock", function(items) {
-		if (items != null) {
-			storedCurrBlock = items;
+// Function to coordinate the function calls to see if the current url should be
+// blocked. Mainly just dealing with the promise of getting the data from the
+// storage and then checking the url in validSite(). 
+// Always returns nothing.
+async function checkBlock(url, tabID) {
+	console.log("checkking if block!");
+	// value is currentBlock
+	getCurrentBlock().then(function(value) {
+		if (value == null | value.sites == null)  {
+			console.log("Tried to fetch currentBlock from storage for validSite, it is null");
+			return; 
 		}
+		validSite(value, url, tabID);
+		return;
+	}).catch(function(error) {
+		console.log("Error in fetching currentBlock from storage for validSite")
+		return; 
 	})
+}
 
-	console.log("storedCurrBlock:");
-	console.log(storedCurrBlock);
-
-	if (storedCurrBlock == null) {
-		console.log("Tried to fetch currentBlock from storage for validSite, it is null");
-		return false; 
-	} 
-
-	const url = tab.url;
-
+// Checks if the current url should be blocked according to the fetched
+// currentBlock. Calls blockTab if it should, returns void if it shouldn't.
+function validSite(currentBlock, url, tabID) {
+	console.log("checkking if valid site!");
+	console.log("currentBlock");
+	console.log(currentBlock);
 	excluded = false;
 
-	for (let s of storedCurrBlock.currentBlock.sites) {
+	for (let s of currentBlock.sites) {
 		if (url.includes(s)) {
 			excluded = false;
-			for (let e of storedCurrBlock.currentBlock.exclude) {
+			for (let e of currentBlock.exclude) {
 				if (url.includes(e)) {
 					excluded = true;
 					break;
 				}
 			}
 			if (!excluded) {
-				return true;
+				console.log("should be blocked!");
+				blockTab(tabID);
+				return;
 			}
 		}
 	}
-	return false;
+	console.log("shouldn't block!");
+	return;
+}
+
+// Fetchs the stored currentBlock, the sites that should be blocked now until
+// the next alarm goes off. Returns null if failed.
+// Maybe should add check for if error? 
+async function getCurrentBlock() {
+	console.log("async trying to get current block!");
+	let result = await chrome.storage.local.get("currentBlock");
+	if (result == undefined) {
+		return null;
+	}
+	return result.currentBlock; 
+
 }
 
 function blockTab(tabId) {
@@ -331,6 +401,10 @@ function blockTab(tabId) {
 	console.log("block!!");
 }
 
+
+// need to figure out how to optimize so it isn't checking several times for each
+// tab --- bc tab title loads in, the tab favicon (little icon at tab name) and
+// when the tab completes loading! 
 
 // tab gets updated, checks if should block, if it should then it does 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
@@ -340,22 +414,17 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 
 	// if the change of the tab is that it has been unloaded from memory
 	// or that it is currently loading don't do anything!! another event
-	// will fire once it's done loading (TabStatus == "complete")
-	if (changeInfo.discarded || changeInfo.status == "loading") {
+	// will fire once it's done loading (tab.status == "complete")
+	if ((changeInfo.discarded || changeInfo.status == "loading") || (!tab.active)) {
 		return;
 	}
 
 	// no need to check if a tab should be blocked if it cannot 
 	// be blocked or if it was already blocked
-	// maybe change this to chrome:// for all of them?? can't 
-	// imagine someone wants to block the settings page.... 
 	if (tab.url.includes("chrome://extension")) {
 		return;
 	}
 
-	if (true) {
-		if (validSite(tab)) {
-			blockTab(tabID);
-		}
-	}
+	// will check if should be blocked and block if should be
+	checkBlock(tab.url, tabID);
 });
