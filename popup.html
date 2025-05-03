@@ -1,7 +1,11 @@
 <!-- 
-	This page is just the popup in order to easily navigate to the settings
-	and to press a button to turn on every limit. (not done yet on that second part lol)
+	This page is the popup in order to easily navigate to the settings or help
+	pages. In addition, you can manually re-calculate what sites should be 
+	blocked with the recheck button.
  -->
+
+ <!-- maybe add on also block all sites button?? use alarms with certain text to listen
+ for from settings js maybe?????? bc re-writing to config..... -->
 
 <!DOCTYPE html>
 <html lang="en-US">
@@ -15,9 +19,9 @@
 	<body style = "border-style: solid dashed; border-width: 3px; border-radius: 10px">
 		<h3 style="margin: 0px; width: 210px">block site</h3>
 
-		<button id = "settings" > open settings </button>
-		<button id = "blockAll" > block all sites >:) </button>
-		<button id = "help" > help! </button>
+		<button id = "settings" class = "hoverable"> open settings </button>
+		<button id = "recheck" class = "hoverable"> I changed timezones / re-check </button>
+		<button id = "help" class = "hoverable"> help! </button>
 
 	</body>
 	<script src = "popup.js"></script>
