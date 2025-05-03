@@ -2,6 +2,9 @@
 	Help information. Can be launched from the popup or from the settings page
  -->
 
+
+<!-- TO DO : REWRITE ALL PARAGRAPHS TO END AT COLUMN 80 -->
+
 <!DOCTYPE html>
 <html lang="en-US">
 	<head>
@@ -37,11 +40,28 @@
 
 		<br>
 		<h3> Question: What does the "I changed timezones / recheck" button do? </h3>
-		<p> The way that the code works to see what websites should be blocked is by using the current time and calculating when it will need to next check (when another site should start being blocked or the current ones should become unblocked). This calculation for re-checking is in minutes. Therefore, if you change time zones before the next check should happen, it will be off. The button manually makes it recalculate what sites should be currently blocked. </p>
+		<p> 
+			The way that the code works to see what websites should be blocked is 
+			by using the current time and calculating when it will need to next check
+		 	(when another site should start being blocked or the current ones should
+		  	become unblocked). This calculation for re-checking is in minutes. 
+			Therefore, if you change time zones before the next check should happen,
+			it will be off. The button manually makes it recalculate what sites 
+			should be currently blocked. 
+		</p>
+
+		<br>
+	 	<h3> Question: Why do you have all those permissions? Are you reading and changing information on all sites? </h3>
+	 	<p> Chrome has designated URL to be a sensitive properity of a tab. Therefore, this extension uses a strong permission, "tabs". Using "tabs" creates a warning that says this extension can "read your browsing history". This permission cannot actually read any past browsing you have done, it can only read the URL information of current sites. </p>
+	 	<p>The other permissions are "storage" and "alarms" whose usages are explained in a later question. </p>
 
 		<br>
 	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking, what will happen? </h3>
 	 	<p>	The website will not block. If, in the same time period, you have "youtube.com" in the block list but also you have "youtube.com" in the exclude list, it will not block. The sites being in the same time period is the only thing that matters, not what groups they originated from. </p>
+
+	 	<br>
+	 	<h3> Question: More specifically, what is being stored? What alarms will fire? </h3>
+	 	<p>	There are two things being stored: "config" and "currentBlock". "config" is the user's settings: a list of groups, where each group has the name, active status, sites to block, sites to exclude, times, and days. "curentblock" stores a list of currently blocked websites and a list of currently excluded websites. Alarms fire when a new time starts or the current time block ends, then, "config" is re-analyzed to chose the new websites that should be currently blocked. </p>
 
 	</body>
 </html>
