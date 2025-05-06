@@ -15,26 +15,40 @@
 
 // TO DO:
 	// save input when press save button
-	// add comments for all the functions // reorder them
-	// make the button color changer functions return so it doesn't set???
+	// add comments for all the functions && reorder them
 	// load config from file when window loading
 	// make blockAllSites button on top left of settings.html and write to 
 			// file (after pressing save)
 	// line up some divs to be horizontal (sites on right, else on left? or 
 			// just sites to block on right, everything else on left? experiment!)
-	// give everything titles so they are clear to screen readers
+	// give everything titles so they are clear to screen readers!
 	// add button in settings html to launch help page!
+	// when time is written to storage, store version of those 
+		// numbers in the number of minutes per day way!
+	// make sure everything in these files are less than 80 characters
+	// let the user name the groups! they will be our default group1 name otherwise,
+		// also will use groupx names internally regardless
+	// add explanation of what is in storage and how alarms work to help.html!!
+	// make a "give me a break until midnight" button that sets off an alarm that that background js
+		// listens for and then sets currentblock to empty and then sets its next alarm for midngith
+		// ofc can be overrided by cilcking the manual recheck button -- by designn! 
+	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
+
 
 const group1 = new Group(true, 
 	["wikipedia.org", "mail.google.com"], 
 	["en.wikipedia.org/wiki/California"], 
-	[["10:00", "04:10"],["12:59", "23:59"]], 
+	// I think store it in minutes since 0:00,, bc then less computations on the
+	// thing that is running a lot (background.js)
+	// make helper function timeToMinutes(time) {} where time is a string, returns
+	// an int representation of that time
+	[[0, 190],[1260, 1435]], 
 	[true, true, false, false, false, false, true]);
 
 const group2 = new Group(true, 
 	["facebook.com", "gmail.com"], 
 	["testingtesting123"], 
-	[["10:00", "06:13"],["12:59", "14:39"]],
+	[[5, 613],[1290, 1439]],
 	[true, false, true, true, true, false, true]);
 
 const config = {
@@ -50,6 +64,10 @@ let allGroupsDiv = document.getElementById("allGroupsDiv");
 // if config is null then write two blank groups to the page!! 
 
 window.addEventListener("load", function() {
+	// get config, once done then: write to screen! 
+
+	// do logic here if config was empty from storage then write 2 groups that are null! 
+	// mayhaps make a config object that contains a list groups that has [null, null]
 	let numGroups = config.groups.length;
 	for (let i = 0; i < numGroups; i++) {
 		drawGroup(i + 1, config.groups[i])
@@ -63,6 +81,19 @@ window.addEventListener("load", function() {
 
 const testingbutton = document.getElementById("testingButton");
 testingbutton.addEventListener("click", function() {
+	chrome.alarms.create("updateBlockingAlarm", { 
+		delayInMinutes: 0.5
+	});
+
+	// chrome.storage.local.set({
+	// 	config: {
+	// 		"blockAll": false,
+	// 		"groups": [group1, group2, null]
+	// 	}
+	// });
+
+	console.log("created alarm!");
+
 	chrome.storage.local.get("foo", function(results) {
 		console.log("trying to get something not in storage gives: " + results);
 			// object Object???? lol
@@ -81,7 +112,7 @@ saveButton.addEventListener("click", function() {
 	// can do allGroupsDiv.children to get each of its children loop through and then loop through each of those children too!!?? 
 
 	console.log("all groups div childdren:");
-	console.log(allGroupsDiv.children);
+	// console.log(allGroupsDiv.children);
 
 
 	const group1Elements = document.querySelectorAll('[data-group = "1"]');
@@ -120,8 +151,39 @@ moreGroups.addEventListener("click", function() {
 });	
 
 
-const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+// inputs a two length array (as that is how all times are stored) as ints
+// that represent the time after midnight in minutes. returns a two length
+// array that has those same times translated to be string hours:minutes in
+// 24 hour time.
+// Example: [5, 613] --> ["00:05", "10:13"]
+function minutesToTime(minutes) {
+	for (let i = 0; i < 2; i++) {
+		let hh = Math.trunc(minutes[i] / 60); 
+		let mm = minutes[i] % 60;
+		minutes[i] = hh.toString() + ":" + mm.toString();
+	}
+	return minutes;
+}
 
+// also need to include time to minutes for saving the others way!! 
+// Time inputted will be of the form "hh:mm". Returns null if failed
+// calculate minutes by hh*60 + mm
+// example: ["00:05", "11:59"] --> [5, 1439]
+function timeToMinutes(time) {
+	for (let i = 0; i < 2; i++) {
+		let hh = parseInt(time[i]); // parses up till it's not an int, the :
+		let mm = parseInt(time[i].substring(3));
+		if (isNaN(hh) || isNaN(mm)) {
+			return null;
+		}
+		time[i] = 60*hh + mm;
+	}
+	// javascript arrays are objects so, this return statement
+	// is unneeded -- it's here to be clear what's changing
+	return time;
+}
+
+const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 // okay once save button is pressed then:
 // iterate through all the elements on the page (everything with a class "group")
@@ -324,6 +386,7 @@ function textInputDiv(type, groupNum, value, parentDiv) {
 // entries for starting and ending times
 
 // weirdly not doing spaces around the "start:" and "end:" like it does in .html??
+// maybe need to add padding ?? 
 function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	let div = document.createElement("div");
 
@@ -429,16 +492,13 @@ function Group(active, sites, excludes, times, days) {
 	this.days = days;
 	this.active = active;
 }
-// then do const group1 = new Group(………)
 
 
 const green = "rgb(35, 149, 96)";
 const blue = "#6384A1";
 const white = "#e5e5e5";
 
-// pass in button, check if it's already on (green) or off (blue) and 
-// changed to the opposite color
-// 
+
 // If the button is being hovered over when this function is called, 
 // then it will no longer be inverted coloring. This is on purpose 
 // so that the change in color between green and blue is more clear 
@@ -476,6 +536,7 @@ function unclicked(button, activeButton) {
 	if (activeButton) {
 		button.innerHTML = "off";
 	}
+	button.style.cursor = "default"
 	button.dataset.clicked = "off"
 }
 
@@ -488,18 +549,10 @@ function hover(button) {
 	} else {
 		button.style.color = blue;
 	}
+	button.style.cursor = "pointer"
 	button.style.background = white;
 
 
-	// the following code does work when it's slow but does not work 
-	// when changing lots of buttons and moving in and out, some get 
-	// stuck on an inverted stage! 
-
-	// let text = button.style.color;
-	// let background = button.style.background;
-
-	// button.style.color = background;
-	// button.style.background = text;
 }
 
 // Sets the inverted colors back to normal
