@@ -1,46 +1,28 @@
-
-// two objects: config in sync/local storage and currently blocked websites in session
-// make the currently blocked websites object have an expiration time; when to recheck
-// all of the groups to see what currently should be blocked; should be the earliest 
-// end time of the previously currently blocked websites
-
-// add explanation of what is in storage and how alarms work to help.html!!
-
-
-// do not let them store 10pm to 3am!!! when writing to storage, write that as 
-// 10pm to 11:59 then mightnight to 3am!!
 // to do: reorder the functions within this file written to be better! !!
-
-// need to decide if on start up will have blank config or just nothing,,, I think
-// just nothing will work fine because we're checking for null!
-
-
-// try writing config to stroage with the testing button in settings.js ---- right now,
-// updateCurrentBlock cannot successfully get the config file from storage! is always 
-// nulll,,,, but the config successfully shows up when the chagned storage is printed....
-
-
 
 const configtoWrite = {
 	groups: [
 		{
+			name: "wikipedia",
 			active: true, 
 			sites: ["wikipedia.org", "mail.google.com"],
-			exclude: ["en.wikipedia.org/wiki/California"],
-			times: [[0, 190],[1260, 1435]],
+			excludes: ["en.wikipedia.org/wiki/California"],
+			times: [[0, 190], [1260, 1435]],
 			days: [true, true, false, true, true, true, true]
 		},
 		{
+			name: "socials",
 			active: false, 
 			sites: ["facebook.com", "gmail.com"],
-			exclude: [],
-			times: [[5, 613],[1290, 1439]],
+			excludes: [],
+			times: [[5, 613], [1290, 1439]],
 			days: [true, false, true, true, true, false, true]
 		},
 	],
 	blockAll: false
 };
 // each group should have the following variables:
+	// name (string) (of the group)
 	// active (bool), 
 	// sites (array of strings), 
 	// exclude (array of strings),
@@ -91,6 +73,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
 		// automatically open the settings page! 
 		chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
 	} else {
+		console.log("updated!!!");
 		// maybe in production also have it open settings back on update! 
 		/// bc can imagine would only ever press update if user changed 
 		// the code or redownloaded new release,, in which case it makes
@@ -101,9 +84,8 @@ chrome.runtime.onInstalled.addListener(function(details) {
 		// chrome.storage.local.set({"currentBlock": tempCurrentBlock});
 
 		// code for writing in a config for testing! 
-		// chrome.storage.local.set({"config": configtoWrite});
+		chrome.storage.local.set({"config": configtoWrite});
 
-		console.log("updated!!!");
 
 		clearAlarmsPrintBytesUsed();
 		updateCurrentBlock();
@@ -206,8 +188,6 @@ function calculateBlock(config) {
 		// iterate through each time pair of the current group
 		for (let time of g.times) {
 			// if at or after start time and before ending time:
-			console.log("time of times: " + time);
-			console.log("first finish: " + firstFinish);
 			if (nowMinutes >= time[0] && nowMinutes < time[1]) {
 
 				// in order to be more efficient and not try to add same 
@@ -409,19 +389,25 @@ function blockTab(tabId) {
 // tab gets updated, checks if should block, if it should then it does 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 	console.log("tab updated " + tab.url);
+	console.log(tab);
 	console.log("change info:");
 	console.log(changeInfo);
 
 	// if the change of the tab is that it has been unloaded from memory
 	// or that it is currently loading don't do anything!! another event
 	// will fire once it's done loading (tab.status == "complete")
-	if ((changeInfo.discarded || changeInfo.status == "loading") || (!tab.active)) {
+	// tab.highlighted does not sufficiently make it so tabs in other windows are not
+	// blocked --- need to do some sort of check with windowID
+	if ((changeInfo.discarded || changeInfo.status == "loading") || (!tab.highlighted)) {
 		return;
 	}
 
 	// no need to check if a tab should be blocked if it cannot 
 	// be blocked or if it was already blocked
-	if (tab.url.includes("chrome://extension")) {
+	// maybe make this more efficient?? at the beginning??
+	// IDEA: slice the inputted string and then see if it perfectly matches this! 
+	if (tab.url.includes("chrome-extension://")) {
+		console.log("no need to block! you're on the chrome-extension page");
 		return;
 	}
 

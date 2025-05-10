@@ -16,11 +16,10 @@
 // TO DO:
 	// save input when press save button
 	// add comments for all the functions && reorder them
-	// load config from file when window loading
 	// make blockAllSites button on top left of settings.html and write to 
 			// file (after pressing save)
-	// line up some divs to be horizontal (sites on right, else on left? or 
-			// just sites to block on right, everything else on left? experiment!)
+	// line up the divs to be within grids and sites on right, else (logistics)
+			// on the left! 
 	// give everything titles so they are clear to screen readers!
 	// add button in settings html to launch help page!
 	// when time is written to storage, store version of those 
@@ -34,8 +33,13 @@
 		// ofc can be overrided by cilcking the manual recheck button -- by designn! 
 	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
 
+// Creates new tab of help.html 
+document.getElementById("helpButton").addEventListener("click", function() {
+	chrome.tabs.create({ url: chrome.runtime.getURL("../help.html")});
+});
 
-const group1 = new Group(true, 
+const group1 = new Group("wikipedias",
+	true, 
 	["wikipedia.org", "mail.google.com"], 
 	["en.wikipedia.org/wiki/California"], 
 	// I think store it in minutes since 0:00,, bc then less computations on the
@@ -45,13 +49,14 @@ const group1 = new Group(true,
 	[[0, 190],[1260, 1435]], 
 	[true, true, false, false, false, false, true]);
 
-const group2 = new Group(true, 
+const group2 = new Group("socials",
+	true, 
 	["facebook.com", "gmail.com"], 
 	["testingtesting123"], 
 	[[5, 613],[1290, 1439]],
 	[true, false, true, true, true, false, true]);
 
-const config = {
+const tempconfig = {
 	groups: [group1, group2, null],
 	blockAll: false
 }
@@ -60,24 +65,42 @@ const config = {
 // should be const?
 let allGroupsDiv = document.getElementById("allGroupsDiv");
 
-
 // if config is null then write two blank groups to the page!! 
-
 window.addEventListener("load", function() {
-	// get config, once done then: write to screen! 
+	getConfig().then(function(value) {
+		console.log("loaded config!");
+		console.log(value);
 
-	// do logic here if config was empty from storage then write 2 groups that are null! 
-	// mayhaps make a config object that contains a list groups that has [null, null]
-	let numGroups = config.groups.length;
-	for (let i = 0; i < numGroups; i++) {
-		drawGroup(i + 1, config.groups[i])
-	}
-	allGroupsDiv.dataset.groupCount = numGroups;
-
-
-	// fill in all the input fields & buttons from storage....
-	// aka just call fillPage(); and fill page will need to sort out from storage...
+		if (value == null || value.groups.length < 1) {
+			drawGroup(1, null);
+			drawGroup(2, null);
+			allGroupsDiv.dataset.groupCount = 2;
+		} else {
+			let numGroups = value.groups.length;
+			for (let i = 0; i < numGroups; i++) {
+				console.log("loaded group:")
+				console.log(value.groups[i]);
+				drawGroup(i + 1, value.groups[i]);
+			}
+			allGroupsDiv.dataset.groupCount = numGroups; 
+		}		
+		hideLoadingMessage();
+	})
 });
+
+function hideLoadingMessage() {
+	document.getElementById("loadingMessage").style.visibility = "hidden";
+}
+
+// returns config object from storage or null if it is not in storage
+async function getConfig() {
+	let result = await chrome.storage.local.get("config");
+	if (result == undefined) {
+		return null;
+	}
+	return result.config;
+}
+
 
 const testingbutton = document.getElementById("testingButton");
 testingbutton.addEventListener("click", function() {
@@ -104,7 +127,6 @@ testingbutton.addEventListener("click", function() {
 });
 
 
-	
 // if iterating over child list,, perhaps do not need to have the dataset.group!
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
@@ -150,7 +172,6 @@ moreGroups.addEventListener("click", function() {
 	allGroupsDiv.dataset.groupCount = newGroupCount;
 });	
 
-
 // inputs a two length array (as that is how all times are stored) as ints
 // that represent the time after midnight in minutes. returns a two length
 // array that has those same times translated to be string hours:minutes in
@@ -158,9 +179,18 @@ moreGroups.addEventListener("click", function() {
 // Example: [5, 613] --> ["00:05", "10:13"]
 function minutesToTime(minutes) {
 	for (let i = 0; i < 2; i++) {
-		let hh = Math.trunc(minutes[i] / 60); 
+		let hh = Math.trunc(minutes[i] / 60);
+		hh = hh.toString();
+		if (hh.length < 2) {
+		   hh = "0" + hh;
+		}
+
 		let mm = minutes[i] % 60;
-		minutes[i] = hh.toString() + ":" + mm.toString();
+		mm = mm.toString();
+		if (mm.length < 2) {
+		  mm = "0" + mm;
+		}
+		minutes[i] = hh + ':' + mm;
 	}
 	return minutes;
 }
@@ -207,9 +237,8 @@ function drawGroup(groupNum, group) {
 	// if group is null, then is creating a new group to be filled in. 
 	// therefore, should have empty strings for all the values which 
 	// the helper functions will correctly interpret
-	if (group == null) {
-		group = new Group(true, ["", ""], [""], [["", ""]], [false, true, true, true, true, true, false])
-	}
+
+	group = cleanGroupForDraw(groupNum, group);
 
 	let groupDiv = document.createElement("div");
 	groupDiv.id = "groupDiv" + groupNum;
@@ -308,6 +337,47 @@ function drawGroup(groupNum, group) {
 	groupDiv.appendChild(document.createElement("hr"));
 	groupDiv.appendChild(blankLineElement());
 	allGroupsDiv.appendChild(groupDiv);
+}
+
+function cleanGroupForDraw(groupNum, group) {
+	if (group == null) {
+		group = new Group("group " + groupNum,
+			true, 
+			["", ""], 
+			[""], 
+			[["", ""]], 
+			[false, true, true, true, true, true, false])
+		return group;
+	}
+	if (group.name === undefined) {
+		group.name = "group " + groupNum;
+	}
+	if (group.active === undefined) {
+		group.active = true;
+	}
+	if (group.sites === undefined) {
+		group.sites = ["", ""];
+	} 
+	if (group.excludes == undefined) {
+		group.excludes = ["",""];
+	}
+
+	if (group.times === undefined) {
+		group.times = [["", ""]];
+	} else {
+		console.log("should be in minutes:");
+		console.log(group.times);
+		for (let i = 0; i < group.times.length; i++) {
+			group.times[i] = minutesToTime(group.times[i]);
+		}
+		console.log("shouldbe in time:");
+		console.log(group.times);
+	}
+
+	if (group.days === undefined) {
+		group.days = [false, true, true, true, true, true, false];
+	}
+	return group;
 }
 
 // where type is "site", "exclude", or "time"
@@ -485,7 +555,8 @@ function paragraphElement(text) {
 // two length arrays (first element is start time, second is end 
 // time, ints); days is a 7-array of booleans; active is a boolean 
 // true or false
-function Group(active, sites, excludes, times, days) {
+function Group(name, active, sites, excludes, times, days) {
+	this.name = name; 
 	this.sites = sites;
 	this.excludes = excludes;
 	this.times = times;
