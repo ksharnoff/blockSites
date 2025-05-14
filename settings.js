@@ -32,6 +32,8 @@
 		// listens for and then sets currentblock to empty and then sets its next alarm for midngith
 		// ofc can be overrided by cilcking the manual recheck button -- by designn! 
 	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
+	// maybe don't need dataset.selected = on bc can look at the classname? 
+
 
 // Creates new tab of help.html 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -243,9 +245,12 @@ function drawGroup(groupNum, group) {
 	let groupDiv = document.createElement("div");
 	groupDiv.id = "groupDiv" + groupNum;
 
-	let nameText = paragraphElement("group " + groupNum + ":");
-	nameText.style.cssText = "display:inline-block;";
-	groupDiv.appendChild(nameText);
+	let groupName = paragraphElement("name:");
+	groupName.style.cssText = "display: inline-block;";
+	groupDiv.appendChild(groupName);
+	let nameInput = textInput("name", groupNum, group.name, 200);
+	groupDiv.appendChild(nameInput);
+	groupDiv.appendChild(blankLineElement());
 
 	groupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
 	groupDiv.appendChild(deleteElementButton(groupDiv, allGroupsDiv, "delete group"));
@@ -268,7 +273,7 @@ function drawGroup(groupNum, group) {
 	// button for more sites
 	let moreSitesButton = document.createElement("button");
 	moreSitesButton.style.cssText = "display: block;";
-	moreSitesButton.className = "hoverable";
+	moreSitesButton.className = "unselected";
 	moreSitesButton.innerHTML = "more sites";
 	moreSitesButton.addEventListener("click", function() {
 		drawMoreInputs("site", groupNum);
@@ -290,7 +295,7 @@ function drawGroup(groupNum, group) {
 	let moreExcludesButton = document.createElement("button");
 	moreExcludesButton.style.cssText = "display: block;";
 	moreExcludesButton.innerHTML = "more sites";
-	moreExcludesButton.className = "hoverable";
+	moreExcludesButton.className = "unselected";
 	moreExcludesButton.addEventListener("click", function() {
 		drawMoreInputs("exclude", groupNum);
 	});
@@ -315,7 +320,7 @@ function drawGroup(groupNum, group) {
 	let moreTimesButton = document.createElement("button");
 	moreTimesButton.style.cssText = "display: block;";
 	moreTimesButton.innerHTML = "more times";
-	moreTimesButton.className = "hoverable";
+	moreTimesButton.className = "unselected";
 	moreTimesButton.addEventListener("click", function() {
 		drawMoreInputs("time", groupNum);
 	})
@@ -349,6 +354,8 @@ function cleanGroupForDraw(groupNum, group) {
 			[false, true, true, true, true, true, false])
 		return group;
 	}
+
+	// name, active, times, days should not be undefined, this is just in case
 	if (group.name === undefined) {
 		group.name = "group " + groupNum;
 	}
@@ -425,24 +432,9 @@ function drawMoreInputs(type, groupNum) {
 }
 
 // returns a text input element made for sites or excludes, 
-// or returns undefined and logs to console if failed
+// or returns null and logs to console if failed
 function textInputDiv(type, groupNum, value, parentDiv) {
-	let newInput = document.createElement("input");
-	newInput.type = "text";
-	newInput.style.cssText = "width: 350px;";
-	newInput.dataset.type = type;
-	newInput.dataset.group = groupNum;
-
-	if (type === "site") {
-		newInput.placeholder = "ex: youtube.com";
-	} else if (type === "exclude") {
-		newInput.placeholder = "ex: music.youtube.com";
-	} else {
-		console.log("Failed making new text input as given bad input group type");
-		return null;
-	}
-
-	newInput.value = value;
+	let newInput = textInput(type, groupNum, value, 350)
 
 	let div = document.createElement("div");
 	div.appendChild(newInput);
@@ -450,6 +442,29 @@ function textInputDiv(type, groupNum, value, parentDiv) {
 	div.appendChild(blankLineElement());
 
 	return div;
+}
+
+// width in pixels
+function textInput(type, groupNum, value, width) {
+	let newInput = document.createElement("input");
+	newInput.type = "text";
+	newInput.style.cssText = "width: " + width + "px;";
+	newInput.dataset.type = type;
+	newInput.dataset.group = groupNum;
+	newInput.value = value;
+
+	if (type === "site") {
+		newInput.placeholder = "eg: youtube.com";
+	} else if (type === "exclude") {
+		newInput.placeholder = "eg: music.youtube.com";
+	} else if (type === "name") {
+		newInput.placeholder = "group " + groupNum;
+	} else {
+		console.log("Failed making new text input as given bad input group type");
+		return null;
+	}
+
+	return newInput;
 }
 
 // returns a new div of paragraph labels and time 
@@ -505,19 +520,15 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 		swapClicked(newButton, activeButton);
 	});
 
-	newButton.addEventListener("mouseenter", function() {
-		hover(newButton);
-	});
-	newButton.addEventListener("mouseout", function() {
-		unhover(newButton);
-	});
-
 	if (clickedButton) {
 		newButton.dataset.clicked = "on"; 
-		clicked(newButton, activeButton);
+		newButton.className = "selected";
 	} else {
-		newButton.dataset.clicked = "off"; 
-		unclicked(newButton, activeButton);
+		newButton.className = "unselected";
+		newButton.dataset.clicked = "off"
+		if (activeButton) {
+			newButton.innerHTML = "off";
+		}
 	}
 
 	return newButton;
@@ -528,7 +539,7 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 function deleteElementButton(element, div, text) {
 	let newButton = document.createElement("button");
 	newButton.innerHTML = text;
-	newButton.className = "hoverable";
+	newButton.className = "unselected";
 
 	newButton.addEventListener('click', function() {
 		div.removeChild(element);
@@ -564,74 +575,22 @@ function Group(name, active, sites, excludes, times, days) {
 	this.active = active;
 }
 
-
-const green = "rgb(35, 149, 96)";
-const blue = "#6384A1";
-const white = "#e5e5e5";
-
-
 // If the button is being hovered over when this function is called, 
 // then it will no longer be inverted coloring. This is on purpose 
 // so that the change in color between green and blue is more clear 
 // than just the small text changing. 
 function swapClicked(button, activeButton) {
 	if (button.dataset.clicked == "on") {
-		unclicked(button, activeButton);
+		button.className = "unselected";
+		if (activeButton) {
+			button.innerHTML = "off";
+		}
+		button.dataset.clicked = "off"
 	} else {
-		clicked(button, activeButton);
+		button.className = "selected";
+		if (activeButton) {
+			button.innerHTML = "on";
+		}
+		button.dataset.clicked = "on"
 	}
-}
-
-// Change the colors to green background! Redefining the text color 
-// here in case they were hovering after clicking so it updates 
-// instead of staying blue. If it is an "active button" for setting
-// a group being active or not, the text is swapped to "on"
-function clicked(button, activeButton) {
-	button.style.background = green;
-	button.style.color = white;
-
-	if (activeButton) {
-		button.innerHTML = "on";
-	}
-	button.className = "onhover";
-	button.dataset.clicked = "on"
-}
-
-// Change color of button to be default blue
-// If it's the button saying if it's active, 
-// then change the text to "on"
-function unclicked(button, activeButton) {
-	button.style.background = blue; 
-	button.style.color = white; 
-
-	if (activeButton) {
-		button.innerHTML = "off";
-	}
-	button.style.cursor = "default"
-	button.dataset.clicked = "off"
-}
-
-// Inverts the color of a button when mouse event is 
-// fired from something hovering over it
-function hover(button) {
-	// if is green: 
-	if (button.dataset.clicked == "on") {
-		button.style.color = green;
-	} else {
-		button.style.color = blue;
-	}
-	button.style.cursor = "pointer"
-	button.style.background = white;
-
-
-}
-
-// Sets the inverted colors back to normal
-function unhover(button) {
-	if (button.dataset.clicked == "on") {
-		button.style.background = green;
-	} else {
-		button.style.background = blue;
-	}
-	button.style.color = white;
 }

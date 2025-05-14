@@ -8,18 +8,22 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "width: 97%;">
+		<button style = "display: inline-block; margin: 5px; position: fixed; right: 1%; text-align: center; " id = "helpButton" class = "unselected"> help! </button>
+
 		<img src = "icon.png" alt = "green square, same as the block sites browser extension icon">
 		<h2 style="margin: 0px;"> block sites </h2>
 
-		<button style = "display: inline-block; margin: 3px;" id = "testingButton" class = "hoverable"> testing stuff button </button>
+		<button style = "display: inline-block; margin: 3px;" id = "testingButton" class = "unselected"> testing stuff button </button>
 
-		<button id = "save" style = "width: 15%; font-size: 20px; position: fixed; right: 42.5%; left: 42.5%; text-align: center; " data-groupcount = "0" class = "hoverable" >  SAVE GROUPS </button>
+		<button id = "save" style = "width: 15%; font-size: 20px; position: fixed; right: 42.5%; left: 42.5%; text-align: center;" data-groupcount = "0" class = "unselected" >  SAVE GROUPS </button>
 		<br>
 		<br>
+
+		<p id = "loadingMessage" style = "position: absolute;"> The settings page is loading! If you can read this, then 1) it is loading slowly, 2) you are fast at reading, or 3) somthing has broken. You can check the console (right click -> inspect) to see if an error has been outputted. If the page looks like it loaded but you can see this, then there is an error in loading the page that was not accounted for. </p>
 
 		<div id = "allGroupsDiv"> </div>
 
-		<button id = "moreGroups" style = "width: 10%; font-size: 18px; position: absolute; right: 45%; left: 45%; text-align: center;" class = "hoverable"> more groups </button>
+		<button id = "moreGroups" style = "width: 10%; font-size: 18px; position: absolute; right: 45%; left: 45%; text-align: center;" class = "selected"> more groups </button>
 		<br>
 		<br>
 	</body>
