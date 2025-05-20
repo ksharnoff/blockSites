@@ -18,22 +18,12 @@
 	// add comments for all the functions && reorder them
 	// make blockAllSites button on top left of settings.html and write to 
 			// file (after pressing save)
-	// line up the divs to be within grids and sites on right, else (logistics)
-			// on the left! 
 	// give everything titles so they are clear to screen readers!
-	// add button in settings html to launch help page!
-	// when time is written to storage, store version of those 
-		// numbers in the number of minutes per day way!
 	// make sure everything in these files are less than 80 characters
-	// let the user name the groups! they will be our default group1 name otherwise,
-		// also will use groupx names internally regardless
-	// add explanation of what is in storage and how alarms work to help.html!!
 	// make a "give me a break until midnight" button that sets off an alarm that that background js
 		// listens for and then sets currentblock to empty and then sets its next alarm for midngith
-		// ofc can be overrided by cilcking the manual recheck button -- by designn! 
+		// ofc can be overrided by clicking the manual recheck button -- by designn! 
 	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
-	// maybe don't need dataset.selected = on bc can look at the classname? 
-
 
 // Creates new tab of help.html 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -103,7 +93,6 @@ async function getConfig() {
 	return result.config;
 }
 
-
 const testingbutton = document.getElementById("testingButton");
 testingbutton.addEventListener("click", function() {
 	chrome.alarms.create("updateBlockingAlarm", { 
@@ -128,7 +117,6 @@ testingbutton.addEventListener("click", function() {
 	});
 });
 
-
 // if iterating over child list,, perhaps do not need to have the dataset.group!
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
@@ -148,12 +136,14 @@ saveButton.addEventListener("click", function() {
 
 // returns a static nodeList where changes in the nodeList do not affect the DOM!
 
-// // Find all elements with data-columns="3"
-// const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
-// // You can then iterate over the results
-// threeColumnArticles.forEach((article) => {
-//   console.log(article.dataset.indexNumber);
-// });
+/*
+// Find all elements with data-columns="3"
+const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
+// You can then iterate over the results
+threeColumnArticles.forEach((article) => {
+  console.log(article.dataset.indexNumber);
+});
+*/
 
 const moreGroups = document.getElementById("moreGroups");
 moreGroups.addEventListener("click", function() {
@@ -243,22 +233,29 @@ function drawGroup(groupNum, group) {
 	group = cleanGroupForDraw(groupNum, group);
 
 	let groupDiv = document.createElement("div");
-	groupDiv.id = "groupDiv" + groupNum;
+	let thirdsDiv = document.createElement("div");
+	thirdsDiv.className = "container";
+
+	let leftGroupDiv = document.createElement("div");
+	let rightGroupDiv = document.createElement("div");
+	let centerGroupDiv = document.createElement("div");
 
 	let groupName = paragraphElement("name:");
 	groupName.style.cssText = "display: inline-block;";
-	groupDiv.appendChild(groupName);
+	leftGroupDiv.appendChild(groupName);
+
 	let nameInput = textInput("name", groupNum, group.name, 200);
-	groupDiv.appendChild(nameInput);
-	groupDiv.appendChild(blankLineElement());
+	nameInput.dataset.type = "groupName";
+	leftGroupDiv.appendChild(nameInput);
+	leftGroupDiv.appendChild(blankLineElement());
 
-	groupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
-	groupDiv.appendChild(deleteElementButton(groupDiv, allGroupsDiv, "delete group"));
+	leftGroupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
+	leftGroupDiv.appendChild(deleteElementButton(groupDiv, allGroupsDiv, "delete group"));
 
-	groupDiv.appendChild(blankLineElement());
-	groupDiv.appendChild(blankLineElement());
+	leftGroupDiv.appendChild(blankLineElement());
+	leftGroupDiv.appendChild(blankLineElement());
 
-	groupDiv.appendChild(paragraphElement("sites to block:"));
+	rightGroupDiv.appendChild(paragraphElement("sites to block:"));
 
 	// inputs for sites
 
@@ -268,7 +265,7 @@ function drawGroup(groupNum, group) {
 	for (let i = 0; i < sitesCount; i++) {
 		siteDiv.appendChild(textInputDiv("site", groupNum, group.sites[i], siteDiv));
 	} 
-	groupDiv.appendChild(siteDiv);
+	rightGroupDiv.appendChild(siteDiv);
 
 	// button for more sites
 	let moreSitesButton = document.createElement("button");
@@ -278,18 +275,18 @@ function drawGroup(groupNum, group) {
 	moreSitesButton.addEventListener("click", function() {
 		drawMoreInputs("site", groupNum);
 	});
-	groupDiv.appendChild(moreSitesButton);
+	rightGroupDiv.appendChild(moreSitesButton);
 
-	groupDiv.appendChild(blankLineElement());
+	rightGroupDiv.appendChild(blankLineElement());
 
-	groupDiv.appendChild(paragraphElement("sites to exclude from blocking:"));
+	rightGroupDiv.appendChild(paragraphElement("sites to exclude from blocking:"));
 	let excludeDiv = document.createElement("div");
 	excludeDiv.id = "excludeDiv" + groupNum;
 	let excludeCount = group.excludes.length;
 	for (let i = 0; i < excludeCount; i++) {
 		excludeDiv.appendChild(textInputDiv("exclude", groupNum, group.excludes[i], excludeDiv));
 	} 
-	groupDiv.appendChild(excludeDiv);
+	rightGroupDiv.appendChild(excludeDiv);
 
 	// button for more excludes
 	let moreExcludesButton = document.createElement("button");
@@ -299,11 +296,11 @@ function drawGroup(groupNum, group) {
 	moreExcludesButton.addEventListener("click", function() {
 		drawMoreInputs("exclude", groupNum);
 	});
-	groupDiv.appendChild(moreExcludesButton);
-	groupDiv.appendChild(blankLineElement());
+	rightGroupDiv.appendChild(moreExcludesButton);
+	rightGroupDiv.appendChild(blankLineElement());
 
 
-	groupDiv.appendChild(paragraphElement("times to block:"));
+	leftGroupDiv.appendChild(paragraphElement("times to block:"));
 
 
 	let timeCount = group.times.length;
@@ -314,7 +311,7 @@ function drawGroup(groupNum, group) {
 	for (let i = 0; i < timeCount; i++) {
 		timeDiv.appendChild(timeInputsDiv(groupNum, i+1, group.times[i][0], group.times[i][1], timeDiv));
 	}
-	groupDiv.appendChild(timeDiv);
+	leftGroupDiv.appendChild(timeDiv);
 
 	// button for more times
 	let moreTimesButton = document.createElement("button");
@@ -324,11 +321,11 @@ function drawGroup(groupNum, group) {
 	moreTimesButton.addEventListener("click", function() {
 		drawMoreInputs("time", groupNum);
 	})
-	groupDiv.appendChild(moreTimesButton);
+	leftGroupDiv.appendChild(moreTimesButton);
 
-	groupDiv.appendChild(blankLineElement());
+	leftGroupDiv.appendChild(blankLineElement());
 
-	groupDiv.appendChild(paragraphElement("days blocked: (green)"));
+	leftGroupDiv.appendChild(paragraphElement("days blocked: (green)"));
 
 	// right now does not look right with no spaces between them! 
 	let dayDiv = document.createElement("div");
@@ -336,11 +333,16 @@ function drawGroup(groupNum, group) {
 	for (let i = 0; i < 7; i++){
 		dayDiv.appendChild(buttonElement(daysOfWeek[i], groupNum, group.days[i], false));
 	}
-	groupDiv.appendChild(dayDiv);
+	leftGroupDiv.appendChild(dayDiv);
 
-	groupDiv.appendChild(blankLineElement());
+	thirdsDiv.appendChild(leftGroupDiv);
+	thirdsDiv.appendChild(centerGroupDiv);
+	thirdsDiv.appendChild(rightGroupDiv);
+
+	groupDiv.appendChild(thirdsDiv);
+	// groupDiv.appendChild(blankLineElement());
 	groupDiv.appendChild(document.createElement("hr"));
-	groupDiv.appendChild(blankLineElement());
+	// groupDiv.appendChild(blankLineElement());
 	allGroupsDiv.appendChild(groupDiv);
 }
 
@@ -479,9 +481,9 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	startText.style.cssText = "display:inline-block; margin:0px;";
 	div.appendChild(startText);
 
-	div.appendChild(timeInputElement("start", startTime, groupNum, pairNum));
+	div.appendChild(timeInputElement(" start", startTime, groupNum, pairNum));
 
-	let endText = paragraphElement("end:");
+	let endText = paragraphElement(" end:");
 	endText.style.cssText = "display:inline-block; margin:0px;";
 	div.appendChild(endText);
 
