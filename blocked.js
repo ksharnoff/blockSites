@@ -16,17 +16,19 @@ const images = [
 	// "./images/your-image-here3.jpeg",
 	"./images/squirrel.png",
 	"./images/geyser.jpeg",
-	"./images/bee.jpeg"
+	"./images/bee.jpeg",
+	"./images/tree.jpeg"
 	];
 const altTexts = [
 	"two red circular fireworks errupting in black sky",
 	"strands of grass level and close to the camera, bigger cacti are out of focus in the background",
-	// "alt text here about your image1!!",
-	// "alt text here about your image2!!",
-	// "alt text here about your image3!!",
+	// "alt text here about your image1",
+	// "alt text here about your image2",
+	// "alt text here about your image3",
 	"gray and brown squirrel looks with one eye towards the camera, the background is blurred",
 	"geyser errupting, the base is white rock, there are short trees in the distance, the sky is blue",
-	"bee on a pink petal on gray stone on the ground, with blurred green plants in the background"
+	"bee on a pink petal on gray stone on the ground, with blurred green plants in the background", 
+	"green and orange tree leaves in front of blue sky with few clouds"
 	];
 
 window.addEventListener("load", function() {

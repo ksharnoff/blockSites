@@ -1,4 +1,3 @@
-
 // do not let them store 10pm to 3am!!! when writing to storage, write that as 
 // 10pm to 11:59 then mightnight to 3am!!
 // also if the input field for website is empty,, innerhtml === " " or "" then don't 
@@ -297,7 +296,7 @@ function drawGroup(groupNum, group) {
 		drawMoreInputs("exclude", groupNum);
 	});
 	rightGroupDiv.appendChild(moreExcludesButton);
-	rightGroupDiv.appendChild(blankLineElement());
+	// rightGroupDiv.appendChild(blankLineElement());
 
 
 	leftGroupDiv.appendChild(paragraphElement("times to block:"));
@@ -341,8 +340,8 @@ function drawGroup(groupNum, group) {
 
 	groupDiv.appendChild(thirdsDiv);
 	// groupDiv.appendChild(blankLineElement());
-	groupDiv.appendChild(document.createElement("hr"));
-	// groupDiv.appendChild(blankLineElement());
+	// groupDiv.appendChild(document.createElement("hr"));
+	groupDiv.appendChild(blankLineElement());
 	allGroupsDiv.appendChild(groupDiv);
 }
 
