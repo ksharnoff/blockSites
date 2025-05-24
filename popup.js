@@ -9,7 +9,6 @@ document.getElementById("help").addEventListener("click", function() {
 	chrome.tabs.create({ url: chrome.runtime.getURL("../help.html")});
 });
 
-
 // If click the "I changed timezones / recheck" button then set alarm to go
 // off that background.js will hear and re-calculate who should be blocked
 // now! 
@@ -18,9 +17,22 @@ document.getElementById("help").addEventListener("click", function() {
 let recheckButton = document.getElementById("recheck");
 
 recheckButton.addEventListener("click", function() {
-	recheckButton.innerHTML = "the button worked! wait 30 seconds";
+	recheckButton.innerHTML = "the button worked! wait 30 seconds...";
 	console.log("popup demands manual recheck!");
-	chrome.alarms.create("updateBlockingAlarm", { 
+	chrome.alarms.create("updateCurrentBlock", { 
 		delayInMinutes: 0.5
 	});
-})
+});
+
+
+let blockAllButton = document.getElementById("blockAll");
+
+// Creates alarm to tell background to block everything! 
+blockAllButton.addEventListener("click", function() {
+	blockAllButton.innerHTML = "the button worked! wait 30 seconds...";
+	console.log("popup demands block all!!");
+	
+
+	// instead of making alarm,, what if just get from storage and then write? 
+	// so then instantenous? or can just do it via alarms....
+});

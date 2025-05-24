@@ -41,7 +41,16 @@ const tempCurrentBlock = {
 // if alarm goes off or the config storage gets updated! 
 chrome.alarms.onAlarm.addListener(function(alarm) {
 	console.log(">>>>>>>>alarm sounded!!!");
-	updateCurrentBlock();
+
+	// need to have one that blocks it for inputted amount of minutes!! 
+
+	if (alarm.name === "updateCurrentBlock") {
+		updateCurrentBlock();
+	} else if (alarm.name === "blockAll") {
+		// call function to be writ, takes in config and then re-writes it! 
+	} else {
+		updateCurrentBlock();
+	}
 });
 
 chrome.storage.onChanged.addListener(function(changes) {
@@ -68,7 +77,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
 		clearAlarmsPrintBytesUsed();
 
 		// following line needs to be tested:::: 
-		createAlarm(-1, timeToMinutes(dateToTime(new Date())));
+		createErrorAlarm(-1);
 
 		// automatically open the settings page! 
 		chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
@@ -119,7 +128,8 @@ chrome.storage.onChanged.addListener(function(changes, areaName) {
 // Mainly an async function to get config from storage and then to calculate
 // calculate what to block and when and then write currentBlock to storage. 
 function updateCurrentBlock() {
-	getConfig().then(function(value) {
+	getConfig()
+	.then(function(value) {
 		if (value == null) {
 			console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
 			// if there isn't any stored config, then set an alarm for hour to recheck! 
@@ -127,6 +137,10 @@ function updateCurrentBlock() {
 			return; 
 		} 
 		calculateBlock(value);
+	})
+	.catch(function(value) {
+		console.log("Failed to get config from storage");
+		return;
 	})
 }
 
@@ -212,33 +226,37 @@ function calculateBlock(config) {
 		}
 
 	}
-	createAlarm(firstFinish, nowMinutes);
+	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
 	writeCurrentBlock(sitesBlock, sitesExclude);
 }
 
 // adds all the values in the array to the map, returning the map
 // map is useful so then there are not duplicated values
 function arrayAddToMap(map, arr) {
+	if (arr === undefined || map === undefined) {
+		return map;
+	}
 	for (let val of arr) {
 		map.set(val, 1);
 	}
 	return map;
 }
 
+function mapToArray(map, arr) {
+	map.forEach(function(value, key, map) {
+		arr.push(key);
+	});
+	return arr;
+}
+
 // writes to storage the current blocked,, takes in two maps as input 
 // and writes them down as arrays
 function writeCurrentBlock(sitesBlock, sitesExclude) {
-
 	let sitesBlockArr = [];
 	let sitesExcludeArr = [];
 
-	sitesBlock.forEach(function(value, key, map) {
-		sitesBlockArr.push(key);
-	});
-
-	sitesExclude.forEach(function(value, key, map) {
-		sitesExcludeArr.push(key);
-	});
+	sitesBlockArr = mapToArray(sitesBlock, sitesBlockArr);
+	sitesExcludeArr = mapToArray(sitesBlock, sitesExcludeArr);
 
 	console.log("ran write current block");
 	console.log("sites:");
@@ -275,14 +293,14 @@ function createErrorAlarm(time) {
 	console.log("called create alarm on expire, nowminutes:");
 	console.log(expire);
 	console.log(nowMinutes);
-	createAlarm(expire, nowMinutes);
+	createAlarm(expire, nowMinutes, "updateCurrentBlock");
 }
 
 // the variables here should be const!!! once everything else in code is working try it :D
 //
 // takes in input of when to alarm and also nowTime from 0 to 2359
 // creates an alarm for that time! 
-function createAlarm(expireMinutes, nowMinutes) {
+function createAlarm(expireMinutes, nowMinutes, name) {
 	// should expire at midnight at the latest, if expire time is smaller 
 	// than now time that means the next day, so it should be midnight
 	// midnight is 23hours, 59 minutes which is 1,439 minutes
@@ -297,7 +315,8 @@ function createAlarm(expireMinutes, nowMinutes) {
 
 	console.log("Creating alarm! expire at " + expireMinutes + " now is " + nowMinutes + "; will expire in " + minutesAlarm);
 
-	chrome.alarms.create("updateBlockingAlarm", { 
+	// "updateCurrentBlock"
+	chrome.alarms.create(name, { 
 		delayInMinutes: minutesAlarm
 	});
 }
@@ -388,6 +407,7 @@ function blockTab(tabId) {
 
 // tab gets updated, checks if should block, if it should then it does 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
+
 	console.log("tab updated " + tab.url);
 	console.log(tab);
 	console.log("change info:");

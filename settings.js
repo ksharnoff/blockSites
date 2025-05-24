@@ -435,7 +435,7 @@ function drawMoreInputs(type, groupNum) {
 // returns a text input element made for sites or excludes, 
 // or returns null and logs to console if failed
 function textInputDiv(type, groupNum, value, parentDiv) {
-	let newInput = textInput(type, groupNum, value, 350)
+	let newInput = textInput(type, groupNum, value, 400)
 
 	let div = document.createElement("div");
 	div.appendChild(newInput);
@@ -477,13 +477,13 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	let div = document.createElement("div");
 
 	let startText = paragraphElement(" start: ");
-	startText.style.cssText = "display:inline-block; margin:0px;";
+	startText.style.cssText = "display:inline-block; margin:0px 8px 0px 5px;";
 	div.appendChild(startText);
 
-	div.appendChild(timeInputElement(" start", startTime, groupNum, pairNum));
+	div.appendChild(timeInputElement("start", startTime, groupNum, pairNum));
 
 	let endText = paragraphElement(" end:");
-	endText.style.cssText = "display:inline-block; margin:0px;";
+	endText.style.cssText = "display:inline-block; margin: 0px, 8px, 0px, 5px;";
 	div.appendChild(endText);
 
 	div.appendChild(timeInputElement("end", endTime, groupNum, pairNum));
@@ -522,11 +522,11 @@ function buttonElement(day, groupNum, clickedButton, activeButton) {
 	});
 
 	if (clickedButton) {
-		newButton.dataset.clicked = "on"; 
+		// newButton.dataset.clicked = "on"; 
 		newButton.className = "selected";
 	} else {
 		newButton.className = "unselected";
-		newButton.dataset.clicked = "off"
+		// newButton.dataset.clicked = "off"
 		if (activeButton) {
 			newButton.innerHTML = "off";
 		}
@@ -581,17 +581,15 @@ function Group(name, active, sites, excludes, times, days) {
 // so that the change in color between green and blue is more clear 
 // than just the small text changing. 
 function swapClicked(button, activeButton) {
-	if (button.dataset.clicked == "on") {
+	if (button.className == "selected") {
 		button.className = "unselected";
 		if (activeButton) {
 			button.innerHTML = "off";
 		}
-		button.dataset.clicked = "off"
 	} else {
 		button.className = "selected";
 		if (activeButton) {
 			button.innerHTML = "on";
 		}
-		button.dataset.clicked = "on"
 	}
 }
