@@ -13,17 +13,24 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		<title> block site </title>
+		<title> block site popup </title>
 		<link rel="stylesheet" href="style.css">
 	</head>
-	<body style = "border-style: solid dashed; border-width: 3px; border-radius: 10px">
+	<body style = "border-style: solid dashed; border-width: 3px; border-radius: 6px">
 		<img src = "icon.png" class = "logo" alt = "green square, same as the block sites browser extension icon">
-		<h3 style="margin: 0px; width: 210px">block site</h3>
+		<h3 style="margin: 0px; margin-left: 5px; width: 270px;">block site</h3>
 
 		<button id = "settings" class = "unselected"> open settings </button>
-		<button id = "recheck" class = "unselected"> I changed timezones / re-check </button>
-		<button id = "blockAll" class = "unselected"> block every site </button>
 		<button id = "help" class = "unselected"> help! </button>
+		<button id = "recheck" class = "unselected"> timezone change / re-check </button>
+		<button id = "blockAll" class = "unselected"> block every site </button>
+
+		<br>
+		<button id = "pauseButton" class = "unselected" style = "margin-right: 0px;"> pause </button>
+		<p style = "display: inline-block; margin: 0px;"> for</p>
+		<input id = "pauseAmount" type = "text" style = "width: 40px; margin: 0px;" value = "30"> minutes </input>
+
+		<p id = "pauseMessage"> </p>
 
 	</body>
 	<script src = "popup.js"></script>

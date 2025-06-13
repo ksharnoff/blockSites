@@ -23,6 +23,7 @@
 		// listens for and then sets currentblock to empty and then sets its next alarm for midngith
 		// ofc can be overrided by clicking the manual recheck button -- by designn! 
 	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
+	// change stuff to const if it can be
 
 // Creates new tab of help.html 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -560,7 +561,6 @@ function paragraphElement(text) {
 	newPara.innerText = text;
 	return newPara;
 }
-
 
 // sites is an array of 
 // strings; exclude is an array of strings times is an array of 

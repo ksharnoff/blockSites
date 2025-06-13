@@ -1,3 +1,10 @@
+/*
+to do :
+- make th block every site get config from storage and change to unblock every site if
+	all teh sites are currently blocked !
+*/
+
+
 // Creates new tab of settings.html
 document.getElementById("settings").addEventListener("click", function() {
 	chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
@@ -9,30 +16,63 @@ document.getElementById("help").addEventListener("click", function() {
 	chrome.tabs.create({ url: chrome.runtime.getURL("../help.html")});
 });
 
-// If click the "I changed timezones / recheck" button then set alarm to go
-// off that background.js will hear and re-calculate who should be blocked
-// now! 
-// The alarm must have a minimum 30 seconds wait because chrome says so
+
+async function sendMessageToBackground(message) {
+	console.log("popup js is trying to send a message to background!");
+
+	chrome.runtime.sendMessage(message)
+		.then(function() {}, function (error) { 
+			console.log("error in sending message from popup js to background")
+			console.log(error); 
+		});
+}
+
 
 let recheckButton = document.getElementById("recheck");
-
 recheckButton.addEventListener("click", function() {
-	recheckButton.innerHTML = "the button worked! wait 30 seconds...";
-	console.log("popup demands manual recheck!");
-	chrome.alarms.create("updateCurrentBlock", { 
-		delayInMinutes: 0.5
-	});
+	sendMessageToBackground({task: "updateCurrentBlock"});
 });
+
 
 
 let blockAllButton = document.getElementById("blockAll");
-
-// Creates alarm to tell background to block everything! 
+// Sends message to tell background to block everything! 
 blockAllButton.addEventListener("click", function() {
-	blockAllButton.innerHTML = "the button worked! wait 30 seconds...";
 	console.log("popup demands block all!!");
-	
-
-	// instead of making alarm,, what if just get from storage and then write? 
-	// so then instantenous? or can just do it via alarms....
+	sendMessageToBackground({task: "blockAll"});
 });
+
+
+let pauseButton = document.getElementById("pauseButton");
+pauseButton.addEventListener("click", async function() {
+	console.log("pause button hit");
+	let amountStr = document.getElementById("pauseAmount").value;
+	let statusMessage = document.getElementById("pauseMessage");
+	statusMessage.innerHTML = "";
+
+	let amount = parseInt(amountStr);
+
+	console.log(amount);
+
+	if (isNaN(amount)) {
+		console.log("does equal!!");
+		statusMessage.innerHTML = "Can only give a numerical number to pause";
+		return;
+	}
+
+	if (amount < 1) {
+		amount = 1;
+	}
+	if (amount > 1440) {
+		amount = 1440;
+	}
+
+
+	const message = {task: "pause", time: amount};
+	await sendMessageToBackground(message);
+
+
+	statusMessage.innerHTML = "Pausing blocking for " + amount + " minutes";
+});
+
+

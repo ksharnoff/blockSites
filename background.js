@@ -42,14 +42,26 @@ const tempCurrentBlock = {
 chrome.alarms.onAlarm.addListener(function(alarm) {
 	console.log(">>>>>>>>alarm sounded!!!");
 
-	// need to have one that blocks it for inputted amount of minutes!! 
+	if (alarm.name !== "updateCurrentBlock") {
+		console.log(alarm.name);
+	}
 
-	if (alarm.name === "updateCurrentBlock") {
+	updateCurrentBlock();
+});
+
+chrome.runtime.onMessage.addListener(function(request) {
+	console.log("got a message!!!!! <--------");
+	console.log(request);
+	if (request === undefined || request.task === undefined) {
 		updateCurrentBlock();
-	} else if (alarm.name === "blockAll") {
-		// call function to be writ, takes in config and then re-writes it! 
-	} else {
+	} else if (request.task === "updateCurrentBlock") {
 		updateCurrentBlock();
+	} else if (request.task === "blockAll") {
+		blockAll();
+	} else if (request.task === "pause") {
+		if (request.time !== undefined) {
+			pauseBlock(request.time);
+		}
 	}
 });
 
@@ -121,8 +133,33 @@ chrome.storage.onChanged.addListener(function(changes, areaName) {
 	console.log("!!!!storage changed!");
 	console.log(changes);
 	updateCurrentBlock();
+});
+
+
+// pauses all blocking for the number of inputted minutes
+function pauseBlock(time) {
+	if (isNaN(time)) {
+		console.log("Tried to pause for a time that isn't a number");
+		console.log(time);
+		return;
 	}
-)
+	if (time < 1) {
+		time = 1;
+	} else if (time > 1400) { // number of minutes in a day
+		time = 1400;
+	}
+
+
+	chrome.alarms.clearAll();
+	createErrorAlarm(time);
+	writeCurrentBlock(new Map(), new Map());
+}
+
+
+function blockAll() {
+	
+}
+
 
 // To coordinate the functions about updating the current block
 // Mainly an async function to get config from storage and then to calculate
@@ -278,9 +315,10 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 
 // easy function that will set nowMinutes in order to
 // call createAlarm to have the alarm expire at midnight or in a few minutes
-// 
 // or maybe I shoud have a global nowMinutes variable starting from the wakeup 
 // of this background js????
+//
+// inputs a time in minutes, sets an alarm to go off in that many minutes
 function createErrorAlarm(time) {
 	const nowMinutes = timeToMinutes(dateToTime(new Date()));
 
@@ -296,8 +334,6 @@ function createErrorAlarm(time) {
 	createAlarm(expire, nowMinutes, "updateCurrentBlock");
 }
 
-// the variables here should be const!!! once everything else in code is working try it :D
-//
 // takes in input of when to alarm and also nowTime from 0 to 2359
 // creates an alarm for that time! 
 function createAlarm(expireMinutes, nowMinutes, name) {
@@ -409,16 +445,20 @@ function blockTab(tabId) {
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 
 	console.log("tab updated " + tab.url);
-	console.log(tab);
+	// console.log(tab);
 	console.log("change info:");
 	console.log(changeInfo);
 
 	// if the change of the tab is that it has been unloaded from memory
 	// or that it is currently loading don't do anything!! another event
 	// will fire once it's done loading (tab.status == "complete")
-	// tab.highlighted does not sufficiently make it so tabs in other windows are not
-	// blocked --- need to do some sort of check with windowID
-	if ((changeInfo.discarded || changeInfo.status == "loading") || (!tab.highlighted)) {
+	// .discarded, tab.highlighted, tab.lastAccessed all make sure that the
+	// changed tab is one that is currently being used!
+	// for example a tab playing music in another window should not be checked
+	// whenever each song changes. 
+	if ((changeInfo.discarded || changeInfo.status == "loading") || 
+		(!tab.highlighted) || tab.lastAccessed > 1000) {
+		console.log("no need to block! that tab is still loading or not in use!");
 		return;
 	}
 
