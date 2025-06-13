@@ -15,15 +15,15 @@
 // TO DO:
 	// save input when press save button
 	// add comments for all the functions && reorder them
-	// make blockAllSites button on top left of settings.html and write to 
-			// file (after pressing save)
 	// give everything titles so they are clear to screen readers!
 	// make sure everything in these files are less than 80 characters
-	// make a "give me a break until midnight" button that sets off an alarm that that background js
-		// listens for and then sets currentblock to empty and then sets its next alarm for midngith
-		// ofc can be overrided by clicking the manual recheck button -- by designn! 
 	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
 	// change stuff to const if it can be
+
+
+import { getConfig, swapClicked } from "./sharedFunctions.js";
+
+
 
 // Creates new tab of help.html 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -59,9 +59,21 @@ let allGroupsDiv = document.getElementById("allGroupsDiv");
 
 // if config is null then write two blank groups to the page!! 
 window.addEventListener("load", function() {
-	getConfig().then(function(value) {
+	getConfig()
+	.then(function(value) {
 		console.log("loaded config!");
 		console.log(value);
+
+		let blockAllButton = document.getElementById("blockAll");
+
+		if (value.blockAll) {
+			blockAllButton.className = "selected";
+		} else {
+			blockAllButton.className = "unselected";
+		}
+		blockAllButton.addEventListener("click", function() {
+			swapClicked(blockAllButton, true);
+		});
 
 		if (value == null || value.groups.length < 1) {
 			drawGroup(1, null);
@@ -84,38 +96,38 @@ function hideLoadingMessage() {
 	document.getElementById("loadingMessage").style.visibility = "hidden";
 }
 
-// returns config object from storage or null if it is not in storage
-async function getConfig() {
-	let result = await chrome.storage.local.get("config");
-	if (result == undefined) {
-		return null;
-	}
-	return result.config;
-}
+// // returns config object from storage or null if it is not in storage
+// async function getConfig() {
+// 	let result = await chrome.storage.local.get("config");
+// 	if (result == undefined) {
+// 		return null;
+// 	}
+// 	return result.config;
+// }
 
-const testingbutton = document.getElementById("testingButton");
-testingbutton.addEventListener("click", function() {
-	chrome.alarms.create("updateBlockingAlarm", { 
-		delayInMinutes: 0.5
-	});
+// const testingbutton = document.getElementById("testingButton");
+// testingbutton.addEventListener("click", function() {
+// 	chrome.alarms.create("updateBlockingAlarm", { 
+// 		delayInMinutes: 0.5
+// 	});
 
-	// chrome.storage.local.set({
-	// 	config: {
-	// 		"blockAll": false,
-	// 		"groups": [group1, group2, null]
-	// 	}
-	// });
+// 	// chrome.storage.local.set({
+// 	// 	config: {
+// 	// 		"blockAll": false,
+// 	// 		"groups": [group1, group2, null]
+// 	// 	}
+// 	// });
 
-	console.log("created alarm!");
+// 	console.log("created alarm!");
 
-	chrome.storage.local.get("foo", function(results) {
-		console.log("trying to get something not in storage gives: " + results);
-			// object Object???? lol
+// 	chrome.storage.local.get("foo", function(results) {
+// 		console.log("trying to get something not in storage gives: " + results);
+// 			// object Object???? lol
 
-		console.log("accessing the thing of the object gives: " + results.foo);
-			// gives undefined!!! 
-	});
-});
+// 		console.log("accessing the thing of the object gives: " + results.foo);
+// 			// gives undefined!!! 
+// 	});
+// });
 
 // if iterating over child list,, perhaps do not need to have the dataset.group!
 const saveButton = document.getElementById("save");
@@ -576,20 +588,20 @@ function Group(name, active, sites, excludes, times, days) {
 	this.active = active;
 }
 
-// If the button is being hovered over when this function is called, 
-// then it will no longer be inverted coloring. This is on purpose 
-// so that the change in color between green and blue is more clear 
-// than just the small text changing. 
-function swapClicked(button, activeButton) {
-	if (button.className == "selected") {
-		button.className = "unselected";
-		if (activeButton) {
-			button.innerHTML = "off";
-		}
-	} else {
-		button.className = "selected";
-		if (activeButton) {
-			button.innerHTML = "on";
-		}
-	}
-}
+// // If the button is being hovered over when this function is called, 
+// // then it will no longer be inverted coloring. This is on purpose 
+// // so that the change in color between green and blue is more clear 
+// // than just the small text changing. 
+// function swapClicked(button, activeButton) {
+// 	if (button.className == "selected") {
+// 		button.className = "unselected";
+// 		if (activeButton) {
+// 			button.innerHTML = "off";
+// 		}
+// 	} else {
+// 		button.className = "selected";
+// 		if (activeButton) {
+// 			button.innerHTML = "on";
+// 		}
+// 	}
+// }

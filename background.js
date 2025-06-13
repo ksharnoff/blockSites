@@ -1,4 +1,8 @@
 // to do: reorder the functions within this file written to be better! !!
+// right inputs / outputs for each function! 
+
+import { getConfig } from "./sharedFunctions.js";
+
 
 const configtoWrite = {
 	groups: [
@@ -49,15 +53,23 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 	updateCurrentBlock();
 });
 
-chrome.runtime.onMessage.addListener(function(request) {
+chrome.runtime.onMessage.addListener(function(request, sender, sendReponse) {
 	console.log("got a message!!!!! <--------");
 	console.log(request);
+
 	if (request === undefined || request.task === undefined) {
-		updateCurrentBlock();
+		// do nothing! :D
 	} else if (request.task === "updateCurrentBlock") {
-		updateCurrentBlock();
+		updateCurrentBlock().then(function (value) {
+			console.log("response to send back:");
+			console.log(value);
+			if (value !== undefined && value !== null) {
+				sendReponse({response: "testing testing some failure"});
+			}
+			// return false;
+		});
 	} else if (request.task === "blockAll") {
-		blockAll();
+		blockAllSwap();
 	} else if (request.task === "pause") {
 		if (request.time !== undefined) {
 			pauseBlock(request.time);
@@ -65,10 +77,16 @@ chrome.runtime.onMessage.addListener(function(request) {
 	}
 });
 
+// chrome.runtime.onMessage.addListener(function(request, sender, sendReponse) {
+// 	console.log("got a message!!!!! <--------");
+// 	console.log(request);
+
+// 	sendReponse({response: "testing testing 123"});
+// });
+
 chrome.storage.onChanged.addListener(function(changes) {
 	for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
 		// if any changes to config are detected, update! 
-		// --- maybe also check for this by having settings js send a message? -- redundant! 
 		if (key === "config") {
 			updateCurrentBlock();
 		}
@@ -128,13 +146,6 @@ function clearAlarmsPrintBytesUsed() {
 		console.log(bytesInUse);
 	});
 }
- 
-chrome.storage.onChanged.addListener(function(changes, areaName) {
-	console.log("!!!!storage changed!");
-	console.log(changes);
-	updateCurrentBlock();
-});
-
 
 // pauses all blocking for the number of inputted minutes
 function pauseBlock(time) {
@@ -144,7 +155,7 @@ function pauseBlock(time) {
 		return;
 	}
 	if (time < 1) {
-		time = 1;
+		time = -1;
 	} else if (time > 1400) { // number of minutes in a day
 		time = 1400;
 	}
@@ -155,9 +166,23 @@ function pauseBlock(time) {
 	writeCurrentBlock(new Map(), new Map());
 }
 
+// edits the config stored to set blockAll to the opposite of what it was before
+// used by the popup! 
+function blockAllSwap() {
+	getConfig()
+	.then(function(value) {
+		if (value == null || value.blockAll == null) {
+			console.log("Tried to block all from a popup request, it is null!")
+			createErrorAlarm(180); // set alarm to see if it exists later...
+			return;
+		}
 
-function blockAll() {
-	
+		value.blockAll = !value.blockAll;
+
+		chrome.storage.local.set({
+			config: value
+		});
+	});
 }
 
 
@@ -165,30 +190,20 @@ function blockAll() {
 // Mainly an async function to get config from storage and then to calculate
 // calculate what to block and when and then write currentBlock to storage. 
 function updateCurrentBlock() {
-	getConfig()
+	return getConfig()
 	.then(function(value) {
 		if (value == null) {
 			console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
 			// if there isn't any stored config, then set an alarm for hour to recheck! 
 			createErrorAlarm(60);
-			return; 
+			return "Failed to update blocked sites: couldn't find settings in storage"; 
 		} 
-		calculateBlock(value);
+		return calculateBlock(value);
 	})
 	.catch(function(value) {
 		console.log("Failed to get config from storage");
 		return;
 	})
-}
-
-// returns config object from storage or null if it is not in storage
-async function getConfig() {
-	console.log("async trying to get config!");
-	let result = await chrome.storage.local.get("config");
-	if (result == undefined) {
-		return null;
-	}
-	return result.config;
 }
 
 // Takes in the config item from storage. 
@@ -213,8 +228,7 @@ function calculateBlock(config) {
 		// alarm for midnight!
 		// (if they change settings or blockAll button, new alarm will go off then)
 		createErrorAlarm(-1);
-		writeCurrentBlock(sitesBlock, sitesExclude);
-		return;
+		return writeCurrentBlock(sitesBlock, sitesExclude);
 	}
 
 	const today = new Date();
@@ -264,7 +278,7 @@ function calculateBlock(config) {
 
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
-	writeCurrentBlock(sitesBlock, sitesExclude);
+	return writeCurrentBlock(sitesBlock, sitesExclude);
 }
 
 // adds all the values in the array to the map, returning the map
@@ -310,7 +324,9 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 	if (chrome.runtime.lastError) {
 	 	console.log("chrome runtime last error exists! failed to write to storage!");
         console.log(chrome.runtime.lastError);
+        return chrome.runtime.lastError;
     } 
+    return "success";
 }
 
 // easy function that will set nowMinutes in order to
@@ -428,7 +444,6 @@ async function getCurrentBlock() {
 		return null;
 	}
 	return result.currentBlock; 
-
 }
 
 function blockTab(tabId) {

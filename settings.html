@@ -14,19 +14,21 @@
 		<!-- maybe move the title to be on the same line as the green square?  -->
 		<h2 style="margin: 0px;"> block settings </h2>
 
-		<button style = "display: inline-block; margin: 3px;" id = "testingButton" class = "unselected"> testing stuff button </button>
+		<p style = "display: inline-block; margin-right: 0px"> block all sites: </p>
+		<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
 
 		<button id = "save" style = "width: 15%; font-size: 20px; position: fixed; right: 42.5%; left: 42.5%; text-align: center;" data-groupcount = "0" class = "unselected" >  SAVE GROUPS </button>
 		<br>
 		<br>
 
-		<p id = "loadingMessage" style = "position: absolute;"> The settings page is loading! If you can read this, then 1) it is loading slowly, 2) you are fast at reading, or 3) somthing has broken. You can check the console (right click -> inspect) to see if an error has been outputted. If the page looks like it loaded but you can see this, then there is an error in loading the page that was not accounted for. </p>
+		<p id = "loadingMessage" style = "position: absolute;"> The settings page is loading! If you can read this, then 1) it is loading slowly, 2) you are fast at reading, or 3) somthing has broken. You can check the console (right click -> inspect) to see if an error has been outputted. If the page looks like it loaded but you can see this, then there was an error that was not accounted for. </p>
 
+		<!-- the following div is where the groups of sites will be filled in -->
 		<div id = "allGroupsDiv"> </div>
 
 		<button id = "moreGroups" style = "width: 10%; font-size: 18px; position: absolute; right: 45%; left: 45%; text-align: center;" class = "selected"> more groups </button>
 		<br>
 		<br>
 	</body>
-	<script src="settings.js"></script>
+	<script type = "module" src = "settings.js"></script>
 </html>
