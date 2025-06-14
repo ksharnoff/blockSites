@@ -206,6 +206,10 @@ function calculateBlock(config) {
 	// if later want to change that blockAll will only block all in that day then double check this!! 
 	if (config.blockAll) {
 		for (let g of config.groups) {
+			if (!g.active) {
+				continue;
+			}
+
 			sitesBlock = arrayAddToMap(sitesBlock, g.sites);
 			sitesExclude = arrayAddToMap(sitesExclude, g.exclude);
 		}

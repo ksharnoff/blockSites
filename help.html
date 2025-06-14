@@ -2,9 +2,6 @@
 	Help information. Can be launched from the popup or from the settings page
  -->
 
-
-<!-- TO DO : REWRITE ALL PARAGRAPHS TO END AT COLUMN 80 -->
-
 <!DOCTYPE html>
 <html lang="en-US">
 	<head>
@@ -20,27 +17,59 @@
 
 		<br>
 		<h3> Question: Do I have to press save? (on the settings page) </h3>
-		<p class = "answer"> Once you press save then all the text you wrote in the inputs and all the buttons that you pressed will be saved to your chrome local storage. It only saves with the save button so I don't have to be writing stuff to storage constantly. (more efficient and easier) </p>
+		<p class = "answer"> 
+			Once you press save then all the text you wrote in the inputs and 
+			all the buttons that you pressed will be saved to your chrome 
+			local storage. It only saves with the save button so I don't have 
+			to be writing stuff to storage constantly. 
+		</p>
 
 		<br>
 		<h3> Question: Why are there different groups? How should I distinguish my groups? </h3>
-		<p class = "answer"> Different groups should have different sites that are at different times. For example, if I wanted to block Twitter only in the morning and YouTube only at night, I would use two different groups. If I wanted to block Twitter and YouTube in the morning and at night, I would use one group. If I wanted to block YouTube in the morning and at night, but Twitter only in the morning, I would use two groups. </p>
+		<p class = "answer"> 
+			Different groups should have different sites that are at different 
+			times. For example, if I wanted to block Twitter only in the 
+			morning and YouTube only at night, I would use two different 
+			groups. If I wanted to block Twitter and YouTube in the morning and 
+			at night, I would use one group. If I wanted to block YouTube in 
+			the morning and at night, but Twitter only in the morning, I would 
+			use two groups. 
+		</p>
 
 		<br>
 		<h3> Question: What does the "block all sites" button do? </h3>
-		<p class = "answer"> This button compiles all the websites from every group that you have active (selected green for on) and blocks those websites until midnight. </p>
+		<p class = "answer"> 
+			This button compiles all the websites from every group that you 
+			have active (selected green for on) and blocks those websites 
+			until midnight. 
+		</p>
 
 	 	<br>
 		<h3> Question: I made a change on settings, pressed the save button, reloaded, and the page hasn't changed? </h3>
-		<p class = "answer"> Once you click the save button, all your new settings are collected and given to Chrome to be written to the storage. This can sometimes be slow, depending what else Chrome is doing. Whenever you reload the settings page, it gets whatever data is already in Chrome's storage, which can be not up to date. If you edit and save a non-up-to-date settings page, it will overwrite anything you saved previously. </p>
+		<p class = "answer"> 
+			Once you click the save button, all your new settings are collected 
+			and given to Chrome to be written to the storage. This can 
+			sometimes be slow, depending what else Chrome is doing. Whenever 
+			you reload the settings page, it gets whatever data is already in 
+			Chrome's storage, which can be not up to date. If you edit and save 
+			a non-up-to-date settings page, it will overwrite anything you 
+			saved previously. 
+		</p>
 
 		<br>
 		<h3> Question: Can I change / add to the photos that show on the blocked site? </h3>
-		<p class = "answer"> YES! First, move your image into the folder titled "images" within the "blockSites" extension folder. Then, put the name of those images and some alt text in the file "blocked.js". There are more instructions of where exactly to write those within that file. </p>
+		<p class = "answer"> 
+			YES! First, move your image into the folder titled "images" within 
+			the "blockSites" extension folder. Then, put the name of those 
+			images and some alt text in the file "blocked.js". There are more 
+			instructions of where exactly to write those within that file. 
+		</p>
 
 		<br>
 		<h3> Question: What does the "I changed timezones / recheck" button do? </h3>
 		<p class = "answer"> 
+			This button is located on the popup, which can be accessed by
+			clicking on the extension icon in the top right.
 			The way that the code works to see what websites should be blocked is 
 			by using the current time and calculating when it will need to next check
 		 	(when another site should start being blocked or the current ones should
@@ -51,17 +80,54 @@
 		</p>
 
 		<br>
+		<h3> Question: what do the pause buttons do? </h3>
+		<p class = "answer"> 
+			This button is located on the popup, which can be accessed by
+			clicking on the extension icon in the top right. 
+			The "pause until midnight" button stops all sites from being 
+			blocked until midnight, when the normal blocking schedules resume.
+			The "pause for __ minutes" button stops all sites from being blocked
+			for the amount of time given. The minimum time is 1 minute, the
+			maximum is 1440 minutes (24 hours). 
+			The pausing can be undone by clicking the "re-check button"......			
+		</p>
+
+		<br>
 	 	<h3> Question: Why do you have all those permissions? Are you reading and changing information on all sites? </h3>
-	 	<p class = "answer"> Chrome has designated URL to be a sensitive properity of a tab. Therefore, this extension uses a strong permission, "tabs". Using "tabs" creates a warning that says this extension can "read your browsing history". This permission cannot actually read any past browsing you have done, it can only read the URL information of current sites. </p>
-	 	<p>The other permissions are "storage" and "alarms" whose usages are explained in a later question. </p>
+	 	<p class = "answer"> 
+	 		Chrome has designated the URL to be a sensitive properity of a tab. 
+	 		Therefore, this extension uses a strong permission, "tabs". Using 
+	 		"tabs" creates a warning that says this extension can "read your 
+	 		browsing history". This permission cannot actually read any past 
+	 		browsing you have done, it can only read the URL information of 
+	 		current sites. The other permissions are "storage" and "alarms" 
+	 		whose usages are explained in a later question. 
+	 	</p>
 
 		<br>
 	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking, what will happen? </h3>
-	 	<p class = "answer"> The website will not block. If, in the same time period, you have "youtube.com" in the block list but also you have "youtube.com" in the exclude list, it will not block. The sites being in the same time period is the only thing that matters, not what groups they originated from. </p>
+	 	<p class = "answer"> 
+	 		The website will not block. If, in the same time period, you have 
+	 		"youtube.com" in the block list but also you have "youtube.com" in 
+	 		the exclude list, it will not block. The sites being in the same time 
+	 		period is the only thing that matters, not what groups they 
+	 		originated from. 
+	 	</p>
 
 	 	<br>
 	 	<h3> Question: More specifically, what is being stored? What alarms will fire? </h3>
-	 	<p class = "answer"> There are two things being stored: "config" and "currentBlock". "config" is the user's settings: a list of groups, where each group has the name, active status, sites to block, sites to exclude, times, and days. "curentblock" stores a list of currently blocked websites and a list of currently excluded websites. Alarms fire when a new time starts or the current time block ends, then, "config" is re-analyzed to chose the new websites that should be currently blocked. </p>
+	 	<p class = "answer"> 
+	 		There are two things being stored: "config" and "currentBlock". 
+	 		"config" is the user's settings: a list of groups, where each group 
+	 		has the name, active status, sites to block, sites to exclude, 
+	 		times, and days. "curentblock" stores a list of currently blocked 
+	 		websites and a list of currently excluded websites. "currentBlock" 
+	 		is checked against any sites that update. Alarms fire when a new 
+	 		time starts or the current time block ends, then, "config" is 
+	 		re-analyzed to chose the new websites that should be in 
+	 		"currentBlock". 
+	 	</p>
+
 
 	</body>
 </html>

@@ -96,8 +96,8 @@ saveButton.addEventListener("click", function() {
 	// get data per each group and add it to the list
 	let groupsList = [];
 	for (let i = 1; i <= newGroupCount; i++) {
-		let groupElements = document.querySelectorAll('[data-group = "' + i + '"]');
-		const groupObj = saveGroupFromInputs(groupElements, i);
+		// let groupElements = document.querySelectorAll('[data-group = "' + i + '"]');
+		const groupObj = saveGroupFromInputs(i);
 		if (groupObj !== null) {
 			groupsList.push(groupObj);
 		}
@@ -120,7 +120,16 @@ saveButton.addEventListener("click", function() {
 	});
 });
 
-function saveGroupFromInputs(groupElements, groupNum) {
+// iterates through the group of groupNum and gets all information from all its
+// fields. If that group has the default information (the user hasn't edited
+// it) then null is returned. Helper function to on click save button. 
+function saveGroupFromInputs(groupNum) {
+	const groupElements = document.querySelectorAll('[data-group = "' + groupNum + '"]');
+	if (groupElements === null || groupElements === undefined || groupElements.length < 1) {
+		return null;
+	}
+
+
 	let name = "";
 	let active = true;
 	let days = [false, true, true, true, true, true, false];
