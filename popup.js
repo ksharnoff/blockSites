@@ -1,11 +1,14 @@
 /*
-to do :
-- make th block every site get config from storage and change to unblock every site if
-	all teh sites are currently blocked !
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
 
-- maybe move pause and block all to be implemented here rather than background js? 
-	- because it's not as if we would need to do those things there! no benefit! 
+	- blockSites Chrome Extension
+	- popup.js
+	Functionality for the buttons in the popup. The ones that just open pages do,
+	the ones that are more complicated (blockAll, pause, recheck) send a message
+	to background.js to do those tasks. 
 */
+
 
 import { getConfig, swapClicked } from "./sharedFunctions.js";
 

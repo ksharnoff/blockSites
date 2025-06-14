@@ -1,13 +1,19 @@
-// do not let them store 10pm to 3am!!! when writing to storage, write that as 
-// 10pm to 11:59 then mightnight to 3am!!
-// also if the input field for website is empty,, innerhtml === " " or "" then don't 
+/*
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
+
+	- blockSites Chrome Extension
+	- settings.js
+	This is the functionality of the settings page: getting the previous setings
+	from storage and saving changes. 
+*/
+
 
 // TO DO:
 	// add comments for all the functions && reorder them
-	// give everything titles so they are clear to screen readers!
-	// make sure everything in these files are less than 80 characters
 	// change stuff to const if it can be
-	// don't let them store 10pm to 3am in storage!! make break it up to store :D
+	// give things names || roles for screen readers
+	// test with config and currentBlock being null or DNE in storage -- do the errors work? 
 
 
 import { getConfig, swapClicked } from "./sharedFunctions.js";
@@ -17,30 +23,6 @@ import { getConfig, swapClicked } from "./sharedFunctions.js";
 document.getElementById("helpButton").addEventListener("click", function() {
 	chrome.tabs.create({ url: chrome.runtime.getURL("../help.html")});
 });
-
-const group1 = new Group("wikipedias",
-	true, 
-	["wikipedia.org", "mail.google.com"], 
-	["en.wikipedia.org/wiki/California"], 
-	// I think store it in minutes since 0:00,, bc then less computations on the
-	// thing that is running a lot (background.js)
-	// make helper function timeToMinutes(time) {} where time is a string, returns
-	// an int representation of that time
-	[[0, 190],[1260, 1435]], 
-	[true, true, false, false, false, false, true]);
-
-const group2 = new Group("socials",
-	true, 
-	["facebook.com", "gmail.com"], 
-	["testingtesting123"], 
-	[[5, 613],[1290, 1439]],
-	[true, false, true, true, true, false, true]);
-
-const tempconfig = {
-	groups: [group1, group2, null],
-	blockAll: false
-}
-
 
 // should be const?
 let allGroupsDiv = document.getElementById("allGroupsDiv");
@@ -56,8 +38,10 @@ window.addEventListener("load", function() {
 
 		if (value.blockAll) {
 			blockAllButton.className = "selected";
+			blockAllButton.innerHTML = "on";
 		} else {
 			blockAllButton.className = "unselected";
+			blockAllButton.innerHTML = "off";
 		}
 		blockAllButton.addEventListener("click", function() {
 			swapClicked(blockAllButton, true);
@@ -65,8 +49,7 @@ window.addEventListener("load", function() {
 
 		if (value == null || value.groups.length < 1) {
 			drawGroup(1, null);
-			drawGroup(2, null);
-			allGroupsDiv.dataset.groupCount = 2;
+			allGroupsDiv.dataset.groupCount = 1;
 		} else {
 			let numGroups = value.groups.length;
 			for (let i = 0; i < numGroups; i++) {
@@ -84,9 +67,8 @@ function hideLoadingMessage() {
 
 // iterate through groups, getting the input, and saving it to storage, after
 // the save button is pressed
-const saveButton = document.getElementById("save");
+let saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
-
 	// get total group count
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
 	if (isNaN(newGroupCount)) {
@@ -96,7 +78,6 @@ saveButton.addEventListener("click", function() {
 	// get data per each group and add it to the list
 	let groupsList = [];
 	for (let i = 1; i <= newGroupCount; i++) {
-		// let groupElements = document.querySelectorAll('[data-group = "' + i + '"]');
 		const groupObj = saveGroupFromInputs(i);
 		if (groupObj !== null) {
 			groupsList.push(groupObj);
@@ -115,8 +96,17 @@ saveButton.addEventListener("click", function() {
 		groups: groupsList,
 		blockAll: blockAll
 	}
+	console.log("config to write to stroage:");
+	console.log(config);
+
 	chrome.storage.local.set({
 		config: config
+	}).then(function () {
+		// give the user feedback that it saved! 
+		saveButton.innerHTML = "SAVED!";
+		setTimeout(function () {
+			saveButton.innerHTML = "SAVE GROUPS";
+		}, 1500)
 	});
 });
 
@@ -124,8 +114,12 @@ saveButton.addEventListener("click", function() {
 // fields. If that group has the default information (the user hasn't edited
 // it) then null is returned. Helper function to on click save button. 
 function saveGroupFromInputs(groupNum) {
-	const groupElements = document.querySelectorAll('[data-group = "' + groupNum + '"]');
-	if (groupElements === null || groupElements === undefined || groupElements.length < 1) {
+	const groupElements = document.querySelectorAll(
+			'[data-group = "' + groupNum + '"]'
+		);
+
+	if (groupElements === null || groupElements === undefined || 
+		groupElements.length < 1) {
 		return null;
 	}
 
@@ -284,14 +278,22 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 	// if no time was saved (left blank), then do not push it to the final time
 	// list. 
 	for (let i = 0; i < timePairs.length; i++) {
-		timePairs[i] = timeToMinutes(timePairs[i]);
-
-		// right here do check for if it lasts over midngiht and if so then
-		// add another item right after to deal with!!! split it up!! 
-		// 1439
+		const timePairArr = timeToMinutes(timePairs[i]);
 
 		if (timePairs[i][0] != -1 || timePairs[i][1] != -1) {
-			finalTimes.push(timePairs[i]);
+
+			// case of a time that lasts over midnight: 10pm to 3am
+			if (timePairArr[1] < timePairArr[0] && timePairArr[1] != -1) {
+				const firstPair = [timePairArr[0], 1439];
+				finalTimes.push(firstPair);
+
+				if (timePairArr[1] !== 0) {
+					const secondPair = [0, timePairArr[1]];
+					finalTimes.push(secondPair);
+				}
+			} else {
+				finalTimes.push(timePairArr);
+			}
 		}
 	}
 	return finalTimes;
@@ -392,29 +394,11 @@ function timeToMinutes(time) {
 
 const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-// okay once save button is pressed then:
-// iterate through all the elements on the page (everything with a class "group")
-// each element will have a data-group = "1", data-group = "2", etc to say what group it is in 
-// each element will have a data-type = "site" data-type = "exclude" etc. so taht the correct arrays can be made! 
-// the stand and end times will have data-type = "startTime" etc. and then also have data-timePair = "1", etc. for each pair 
-	// only used in the process of making more time pairs is data-pairCount on each timeDivX (group x) 
-	// which stores the total number of time pairs it has, so the button can make more
-			// think to self maybe do id system of start1, end1, start2, end2 etc...?? but also group names in the id's....
-			// also group names would be group1start1 etc.
-// once the current data-group of the elements being iterated chagnes, send off the group method
 
-// note that the id of the div for all the sites in group1 will be "siteDiv1"
-
-// make it so that drawGroup takes in a group 
-
-// where all of the groups are in a div called allGroupsDiv
-// give input of string num for the group being made
-// repeated code between the new sites and new excludes buttons!!
+// inputted group from config (or null) and the group number, draw all the input
+// fields and buttons necessary
 function drawGroup(groupNum, group) {
-	// if group is null, then is creating a new group to be filled in. 
-	// therefore, should have empty strings for all the values which 
-	// the helper functions will correctly interpret
-
+	// if group is null or any fiels are undefined, set to proper empty strings
 	group = cleanGroupForDraw(groupNum, group);
 
 	let groupDiv = document.createElement("div");
@@ -429,13 +413,15 @@ function drawGroup(groupNum, group) {
 	groupName.style.cssText = "display: inline-block;";
 	leftGroupDiv.appendChild(groupName);
 
-	let nameInput = textInput("name", groupNum, group.name, 200);
+	let nameInput = textInput("name", groupNum, group.name, 250);
 	nameInput.dataset.type = "groupName";
 	leftGroupDiv.appendChild(nameInput);
 	leftGroupDiv.appendChild(blankLineElement());
 
 	leftGroupDiv.appendChild(buttonElement("on", groupNum, group.active, true));
-	leftGroupDiv.appendChild(deleteElementButton(groupDiv, allGroupsDiv, "delete group"));
+	leftGroupDiv.appendChild(
+		deleteElementButton(groupDiv, allGroupsDiv, "delete group")
+	);
 
 	leftGroupDiv.appendChild(blankLineElement());
 	leftGroupDiv.appendChild(blankLineElement());
@@ -443,47 +429,35 @@ function drawGroup(groupNum, group) {
 	rightGroupDiv.appendChild(paragraphElement("sites to block:"));
 
 	// inputs for sites
-
 	let siteDiv = document.createElement("div");
 	siteDiv.id = "siteDiv" + groupNum;
 	let sitesCount = group.sites.length;
 	for (let i = 0; i < sitesCount; i++) {
-		siteDiv.appendChild(textInputDiv("site", groupNum, group.sites[i], siteDiv));
-	} 
+		siteDiv.appendChild(
+			textInputDiv("site", groupNum, group.sites[i], siteDiv)
+		);
+	}
 	rightGroupDiv.appendChild(siteDiv);
 
 	// button for more sites
-	let moreSitesButton = document.createElement("button");
-	moreSitesButton.style.cssText = "display: block;";
-	moreSitesButton.className = "unselected";
-	moreSitesButton.innerHTML = "more sites";
-	moreSitesButton.addEventListener("click", function() {
-		drawMoreInputs("site", groupNum);
-	});
-	rightGroupDiv.appendChild(moreSitesButton);
+	rightGroupDiv.appendChild(moreInputsButton("site", "more sites", groupNum));
 
 	rightGroupDiv.appendChild(blankLineElement());
 
+	// inputs for excludes
 	rightGroupDiv.appendChild(paragraphElement("sites to exclude from blocking:"));
 	let excludeDiv = document.createElement("div");
 	excludeDiv.id = "excludeDiv" + groupNum;
 	let excludeCount = group.excludes.length;
 	for (let i = 0; i < excludeCount; i++) {
-		excludeDiv.appendChild(textInputDiv("exclude", groupNum, group.excludes[i], excludeDiv));
+		excludeDiv.appendChild(
+			textInputDiv("exclude", groupNum, group.excludes[i], excludeDiv)
+		);
 	} 
 	rightGroupDiv.appendChild(excludeDiv);
 
 	// button for more excludes
-	let moreExcludesButton = document.createElement("button");
-	moreExcludesButton.style.cssText = "display: block;";
-	moreExcludesButton.innerHTML = "more sites";
-	moreExcludesButton.className = "unselected";
-	moreExcludesButton.addEventListener("click", function() {
-		drawMoreInputs("exclude", groupNum);
-	});
-	rightGroupDiv.appendChild(moreExcludesButton);
-	// rightGroupDiv.appendChild(blankLineElement());
-
+	rightGroupDiv.appendChild(moreInputsButton("exclude", "more sites", groupNum));
 
 	leftGroupDiv.appendChild(paragraphElement("times to block:"));
 
@@ -494,19 +468,14 @@ function drawGroup(groupNum, group) {
 	timeDiv.dataset.paircount = timeCount;
 	// rename paircount to be nextId???
 	for (let i = 0; i < timeCount; i++) {
-		timeDiv.appendChild(timeInputsDiv(groupNum, i+1, group.times[i][0], group.times[i][1], timeDiv));
+		timeDiv.appendChild(
+			timeInputsDiv(groupNum, i+1, group.times[i][0], group.times[i][1], timeDiv)
+		);
 	}
 	leftGroupDiv.appendChild(timeDiv);
 
-	// button for more times
-	let moreTimesButton = document.createElement("button");
-	moreTimesButton.style.cssText = "display: block;";
-	moreTimesButton.innerHTML = "more times";
-	moreTimesButton.className = "unselected";
-	moreTimesButton.addEventListener("click", function() {
-		drawMoreInputs("time", groupNum);
-	})
-	leftGroupDiv.appendChild(moreTimesButton);
+	// more times button
+	leftGroupDiv.appendChild(moreInputsButton("time", "more times", groupNum));
 
 	leftGroupDiv.appendChild(blankLineElement());
 
@@ -516,7 +485,9 @@ function drawGroup(groupNum, group) {
 	let dayDiv = document.createElement("div");
 
 	for (let i = 0; i < 7; i++){
-		dayDiv.appendChild(buttonElement(daysOfWeek[i], groupNum, group.days[i], false));
+		dayDiv.appendChild(
+			buttonElement(daysOfWeek[i], groupNum, group.days[i], false)
+		);
 	}
 	leftGroupDiv.appendChild(dayDiv);
 
@@ -529,6 +500,25 @@ function drawGroup(groupNum, group) {
 	allGroupsDiv.appendChild(groupDiv);
 }
 
+
+// returns a more button to be used for "sites", "excludes", or "time",
+// specified in the type input. The buttonText is "more times" or "more sites"
+function moreInputsButton(type, buttonText, groupNum) {
+	let moreButton = document.createElement("button");
+	moreButton.style.cssText = "display: block;";
+	moreButton.innerHTML = buttonText;
+	moreButton.className = "unselected";
+
+	moreButton.addEventListener("click", function() {
+		drawMoreInputs(type, groupNum);
+	});
+	return moreButton;
+}
+
+
+// inputs group from config and its number, returns a formatted group to replace
+// any missing sections or to create a group from null. uses the group number
+// to make the name
 function cleanGroupForDraw(groupNum, group) {
 	if (group == null) {
 		group = new Group("group " + groupNum,
@@ -576,7 +566,9 @@ function drawMoreInputs(type, groupNum) {
 	let div = document.getElementById(type + "Div" + groupNum);
 
 	if (div === null) {
-		console.log("Failed drawing inputs from more button as cannot find the div (group) supposed to attach to, " + type + "Div" + groupNum);
+		console.log("Failed drawing inputs from more button as cannot find \
+		 			the div (group) supposed to attach to, " + type + "Div" + 
+		 			groupNum);
 		return;
 	}
 
@@ -586,7 +578,8 @@ function drawMoreInputs(type, groupNum) {
 		// get the pair count from the div, if it's invalid then return
 		let newPairCount = parseInt(div.dataset.paircount);
 		if (isNaN(newPairCount)) {
-			console.log("Failed to draw more time inputs as the pair count of the time div cannot be turned into an int");
+			console.log("Failed to draw more time inputs as the pair count of \
+				the time div cannot be turned into an int");
 			return;
 		}
 		newPairCount++;
@@ -605,7 +598,8 @@ function drawMoreInputs(type, groupNum) {
 
 	// if failed to make a new element, return
 	if (newInput == null) {
-		console.log("Failed to make newInput while drawing new input from 'more' button, likely type wrong");
+		console.log("Failed to make newInput while drawing new input from \
+			'more' button, likely type wrong");
 		return;
 	}
 
@@ -657,13 +651,15 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	let div = document.createElement("div");
 
 	let startText = paragraphElement(" start: ");
-	startText.style.cssText = "display:inline-block; margin:0px 8px 0px 5px;";
+	// startText.style.cssText = "display:inline-block; margin:0px 8px 0px 5px;";
+	startText.className = "timeDiv";
 	div.appendChild(startText);
 
 	div.appendChild(timeInputElement("start", startTime, groupNum, pairNum));
 
 	let endText = paragraphElement(" end:");
-	endText.style.cssText = "display:inline-block; margin: 0px, 8px, 0px, 5px;";
+	// endText.style.cssText = "display:inline-block; margin: 0px, 8px, 0px, 5px;";
+	endText.className = "timeDiv";
 	div.appendChild(endText);
 
 	div.appendChild(timeInputElement("end", endTime, groupNum, pairNum));
@@ -672,11 +668,12 @@ function timeInputsDiv(groupNum, pairNum, startTime, endTime, parentDiv) {
 	return div;
 }
 
-// where type is "start" or "end"
+// Returns a new time input element. type is "start" or "end". "value" is the
+// starting time, or "" if blank time. groupNum and pairNum are needed to set
+// up the .dataset's to be used by the save button later.
 function timeInputElement(type, value, groupNum, pairNum) {
 	let newTime = document.createElement("input");
 	newTime.type = "time";
-	newTime.style.cssText = "width:120px;";
 	newTime.dataset.type = type + "Time";
 	newTime.dataset.group = groupNum;
 	newTime.dataset.timePair = pairNum;
@@ -685,38 +682,38 @@ function timeInputElement(type, value, groupNum, pairNum) {
 	return newTime;
 }
 
-// buttons work when clicked on for first time!! however 
-// when hovered over they do not look right.... 
-// returns a button for the days of the week div set up and the active: on
-// where activeButton is true if it says "on" and false otherwise
-// rename this function to be better!
-function buttonElement(day, groupNum, clickedButton, activeButton) {
+// Returns a button that swaps between green (selected) and blue (unselected).
+// The text inputted is "on" or the days of the week, "Su" ... "Sa". 
+// clickedButton is whether or not the button should start as selected.
+// activeButton is true if the button is on or off - a button to show if
+// the group is active or if the block all sites is active. If the button
+// is an activeButton type, its text needs to change when it swaps. 
+function buttonElement(text, groupNum, clickedButton, activeButton) {
 	let newButton = document.createElement("button");
 	newButton.style.cssText = "display: inline-block; margin: 3px;";
-	newButton.innerHTML = day;
+	newButton.innerHTML = text;
 	newButton.dataset.group = groupNum;
-	newButton.dataset.type = day + "Button";
-
-	newButton.addEventListener("click", function() {
-		swapClicked(newButton, activeButton);
-	});
+	newButton.dataset.type = text + "Button";
 
 	if (clickedButton) {
-		// newButton.dataset.clicked = "on"; 
 		newButton.className = "selected";
 	} else {
 		newButton.className = "unselected";
-		// newButton.dataset.clicked = "off"
 		if (activeButton) {
 			newButton.innerHTML = "off";
 		}
 	}
 
+	newButton.addEventListener("click", function() {
+		swapClicked(newButton, activeButton);
+	});
+
 	return newButton;
 }
 
-// input is the element that should be deleted and the div it belongs to
-// text is either "x" for most buttons or "delete group" for deleting the group
+// Returns new button that on click will delete the inputted element by removing
+// it from its parent div (inputted also). The text of the button will be 
+// inputted as 'text'
 function deleteElementButton(element, div, text) {
 	let newButton = document.createElement("button");
 	newButton.innerHTML = text;

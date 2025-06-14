@@ -1,3 +1,12 @@
+/*
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
+
+	- blockSites Chrome Extension
+	- blocked.js
+	This determines the random image chosen for the blocked.html page. 
+*/
+
 // Feel free to add more images!
 // Put them into the folder titled "images" within the folder blockSites
 // Make sure to add in the same position in both the images and altTexts arrays
@@ -11,9 +20,9 @@
 const images = [
 	"./images/fireworks.jpeg",
 	"./images/grass.jpeg",
-	// "./images/your-image-here1.jpeg",
-	// "./images/your-image-here2.jpeg",
-	// "./images/your-image-here3.jpeg",
+	// "./images/your-image-name-here1.jpeg",
+	// "./images/your-image-name-here2.jpeg",
+	// "./images/your-image-name-here3.jpeg",
 	"./images/squirrel.png",
 	"./images/geyser.jpeg",
 	"./images/bee.jpeg",
@@ -31,6 +40,8 @@ const altTexts = [
 	"green and orange tree leaves in front of blue sky with few clouds"
 	];
 
+// Once the page loads, chose a random photo to display, along with its alt
+// text. 
 window.addEventListener("load", function() {
 	let randImage = document.getElementById("newImage");
 	let rand = Math.floor(Math.random() * images.length); 

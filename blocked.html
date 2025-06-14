@@ -1,9 +1,14 @@
 <!-- 
-	Page to be shown after going to a blocked site
-	There is a randomizer to show different images! 
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
+
+	- blockSites Chrome Extension
+	- blocked.html
+	Page to be shown after going to a blocked site. The images shown are
+	randomized.
 	You can add as many images as you'd like, follow the instructions in 
 	blocked.js!
- -->
+-->
 
 <!DOCTYPE html>
 <html lang="en-US">
@@ -15,8 +20,10 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "width: 97%;">
-		<img src = "icon.png" class = "logo" alt = "green square, same as the block site browser extension icon">
-		<h2 style="margin: 0px;">blocked!</h2>
+		<img src = "icon.png" class = "logo" 
+			alt = "green square, the block site browser extension icon">
+		
+		<h2 style = "margin: 0px;">blocked!</h2>
 
 		<p style = "text-align: center" > you're not allowed to go on that site right now!</p>
 		<br>
@@ -24,5 +31,5 @@
 		<img id = "newImage" style = "width: 60%; height: 50%; display: block; margin-left: auto; margin-right: auto;">
 		
 	</body>
-	<script src="blocked.js"></script>
+	<script src = "blocked.js"></script>
 </html>

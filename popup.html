@@ -1,11 +1,14 @@
 <!-- 
-	This page is the popup in order to easily navigate to the settings or help
-	pages. In addition, you can manually re-calculate what sites should be 
-	blocked with the recheck button.
- -->
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
 
- <!-- maybe add on also block all sites button?? use alarms with certain text to listen
- for from settings js maybe?????? bc re-writing to config..... -->
+	- blockSites Chrome Extension
+	- popup.html
+	This page is the popup in order to easily navigate to the settings or help
+	pages. In addition, you can manually trigger a re-calculation of what sites
+	should be blocked with the recheck button, (un)block all sites, or pause
+	blocking for a chosen amount of minutes. 
+-->
 
 <!DOCTYPE html>
 <html lang="en-US">
@@ -17,7 +20,9 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "border-style: solid dashed; border-width: 3px; border-radius: 6px">
-		<img src = "icon.png" class = "logo" alt = "green square, same as the block sites browser extension icon" style = "display: inline-block;">
+		<img src = "icon.png" class = "logo" style = "display: inline-block;"
+			alt = "green square, the block site browser extension icon">
+
 		<h3 style="margin: 0px; margin-left: 5px; width: 270px;">block site</h3>
 
 		<button id = "settings" class = "unselected"> open settings </button>

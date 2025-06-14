@@ -1,3 +1,12 @@
+/*
+	MIT License
+	Copyright (c) 2025 Kezia Sharnoff
+
+	- blockSites Chrome Extension
+	- style.css
+*/
+
+
 body {
 	background-color: black;
 	color: #e5e5e5;
@@ -54,6 +63,16 @@ input {
 
 input::placeholder{
 	color: #264E6E;
+}
+
+input[type=time] {
+	width: 118px;
+	maring: 0px;
+}
+
+.timeDiv {
+	display: inline-block; 
+	margin: 0px 5px 0px 5px;
 }
 
 .container{
