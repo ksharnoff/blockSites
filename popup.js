@@ -48,17 +48,7 @@ document.getElementById("help").addEventListener("click", function() {
 // If get a response or error, then logs it in the errorMessage
 async function sendMessageToBackground(message) {
 	chrome.runtime.sendMessage(message)
-	.then(function (response) {
-		console.log("GOT RESPONSE BACK!!");
-		if (response === undefined || response === null) {
-			console.log(response);
-			return;
-		}
-		console.log(response);
-		console.log(response.response);
-		errorMessage.innerHTML = response.response;
-	})
-	.then(function (error) { 
+	.then(function () {}, function (error) { 
 		if (error === undefined || error == null) {
 			return;
 		}
@@ -69,13 +59,14 @@ async function sendMessageToBackground(message) {
 }
 
 document.getElementById("recheck").addEventListener("click", function() {
+	errorMessage.innerHTML = "";
 	sendMessageToBackground({task: "updateCurrentBlock"});
 	// errorMessage.innerHTML = "Rechecked!";
 });
 
 document.getElementById("pauseButton").addEventListener("click", function() {
-	let amountStr = document.getElementById("pauseAmount").value;
 	errorMessage.innerHTML = "";
+	let amountStr = document.getElementById("pauseAmount").value;
 
 	let amount = parseInt(amountStr);
 
@@ -103,6 +94,7 @@ document.getElementById("pauseButton").addEventListener("click", function() {
 });
 
 document.getElementById("pauseMidnight").addEventListener("click", function() {
+	errorMessage.innerHTML = "";
 	sendMessageToBackground({task: "pause", time: -1})
 	.then(function () {
 		errorMessage.innerHTML = "Pausing blocking until midnight";

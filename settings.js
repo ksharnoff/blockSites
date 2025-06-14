@@ -1,28 +1,16 @@
 // do not let them store 10pm to 3am!!! when writing to storage, write that as 
 // 10pm to 11:59 then mightnight to 3am!!
 // also if the input field for website is empty,, innerhtml === " " or "" then don't 
-// write it down,, if start & end time are same then don't write them down?? (or set to all day??)
-// if no times given,, then block entire day!??
-// save group even if incomplete! 
-
-// ; add block all sites forever button; write to storage!!!
-
-// add to settings html a <p> saying that things have not loaded in correctly 
-// as the default thing that then will be made invisable once things have 
-// finished loading in.... + put all of them into a giant all groups div to 
-// add more groups onto and make the div invisable until finished loading from config. 
 
 // TO DO:
-	// save input when press save button
 	// add comments for all the functions && reorder them
 	// give everything titles so they are clear to screen readers!
 	// make sure everything in these files are less than 80 characters
-	// do we ever use time form in background js?? maybe go straight from date to minutes instead? 
 	// change stuff to const if it can be
+	// don't let them store 10pm to 3am in storage!! make break it up to store :D
 
 
 import { getConfig, swapClicked } from "./sharedFunctions.js";
-
 
 
 // Creates new tab of help.html 
@@ -82,8 +70,6 @@ window.addEventListener("load", function() {
 		} else {
 			let numGroups = value.groups.length;
 			for (let i = 0; i < numGroups; i++) {
-				console.log("loaded group:")
-				console.log(value.groups[i]);
 				drawGroup(i + 1, value.groups[i]);
 			}
 			allGroupsDiv.dataset.groupCount = numGroups; 
@@ -96,66 +82,225 @@ function hideLoadingMessage() {
 	document.getElementById("loadingMessage").style.visibility = "hidden";
 }
 
-// // returns config object from storage or null if it is not in storage
-// async function getConfig() {
-// 	let result = await chrome.storage.local.get("config");
-// 	if (result == undefined) {
-// 		return null;
-// 	}
-// 	return result.config;
-// }
-
-// const testingbutton = document.getElementById("testingButton");
-// testingbutton.addEventListener("click", function() {
-// 	chrome.alarms.create("updateBlockingAlarm", { 
-// 		delayInMinutes: 0.5
-// 	});
-
-// 	// chrome.storage.local.set({
-// 	// 	config: {
-// 	// 		"blockAll": false,
-// 	// 		"groups": [group1, group2, null]
-// 	// 	}
-// 	// });
-
-// 	console.log("created alarm!");
-
-// 	chrome.storage.local.get("foo", function(results) {
-// 		console.log("trying to get something not in storage gives: " + results);
-// 			// object Object???? lol
-
-// 		console.log("accessing the thing of the object gives: " + results.foo);
-// 			// gives undefined!!! 
-// 	});
-// });
-
-// if iterating over child list,, perhaps do not need to have the dataset.group!
+// iterate through groups, getting the input, and saving it to storage, after
+// the save button is pressed
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", function() {
 
-	// can do allGroupsDiv.children to get each of its children loop through and then loop through each of those children too!!?? 
+	// get total group count
+	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
+	if (isNaN(newGroupCount)) {
+		return;
+	}
 
-	console.log("all groups div childdren:");
-	// console.log(allGroupsDiv.children);
+	// get data per each group and add it to the list
+	let groupsList = [];
+	for (let i = 1; i <= newGroupCount; i++) {
+		let groupElements = document.querySelectorAll('[data-group = "' + i + '"]');
+		const groupObj = saveGroupFromInputs(groupElements, i);
+		if (groupObj !== null) {
+			groupsList.push(groupObj);
+		}
+	}
 
+	// figure it blockAll is on
+	let blockAll = false;
+	let blockAllButton = document.getElementById("blockAll");
+	if (blockAllButton.className === "selected") {
+		blockAll = true;
+	}
 
-	const group1Elements = document.querySelectorAll('[data-group = "1"]');
-	group1Elements.forEach(function(element) {
-		console.log(element);
-		console.log(element.dataset.type);
+	// create config object: list of groups and blockAll
+	const config = {
+		groups: groupsList,
+		blockAll: blockAll
+	}
+	chrome.storage.local.set({
+		config: config
 	});
 });
 
-// returns a static nodeList where changes in the nodeList do not affect the DOM!
+function saveGroupFromInputs(groupElements, groupNum) {
+	let name = "";
+	let active = true;
+	let days = [false, true, true, true, true, true, false];
+	let timeNodes = []; // store time elements, deal with after
+	let sites = [];
+	let excludes = [];
 
-/*
-// Find all elements with data-columns="3"
-const threeColumnArticles = document.querySelectorAll('[data-columns="3"]');
-// You can then iterate over the results
-threeColumnArticles.forEach((article) => {
-  console.log(article.dataset.indexNumber);
-});
-*/
+	// bool to track if the group has any content, aside from name
+	let changed = false;
+
+	// logic of storing each element and if it would change the changes bool
+	groupElements.forEach(function(element) {
+		switch(element.dataset.type) {
+			case "groupName":
+				name = element.value;
+				break;
+			case "onButton":
+				active = isButtonOn(element);
+				if (!active) { changed = true; }
+				break;
+			case "startTime":
+				timeNodes.push(element);
+				break;
+			case "endTime":
+				timeNodes.push(element);
+				break;
+			case "SuButton":
+				days[0] = isButtonOn(element);
+				if (days[0]) { changed = true; }
+				break;
+			case "MoButton":
+				days[1] = isButtonOn(element);
+				if (!days[1]) { changed = true; }
+				break;
+			case "TuButton":
+				days[2] = isButtonOn(element);
+				if (!days[2]) { changed = true; }
+				break;
+			case "WeButton":
+				days[3] = isButtonOn(element);
+				if (!days[3]) { changed = true; }
+				break;
+			case "ThButton":
+				days[4] = isButtonOn(element);
+				if (!days[4]) { changed = true; }
+				break;
+			case "FrButton":
+				days[5] = isButtonOn(element);
+				if (!days[5]) { changed = true; }
+				break;
+			case "SaButton":
+				days[6] = isButtonOn(element);
+				if (days[6]) { changed = true; }
+				break;
+			case "site":
+				const site = element.value.trim();
+				if (site !== "") {
+					sites.push(site);
+					changed = true; 
+				}
+				break;
+			case "exclude":
+				const exclude = element.value.trim();
+				if (exclude !== "") {
+					excludes.push(exclude);
+					changed = true; 
+				}
+				break;
+			default:
+				break;
+		}	
+
+	});
+
+	// match the start and end times and translate to correct format
+	let times = matchStartEndTimeNodes(timeNodes, groupNum);
+	if (times.length > 0) {
+		changed = true;
+	}
+
+	if (!changed) {
+		return null;
+	}
+
+	return new Group(name, active, sites, excludes, times, days);
+}
+
+// Inputs a button element, returns true if it was selected and green, false
+// otherwise. 
+function isButtonOn(element) {
+	if (element.className === "selected") {
+		return true;
+	} 
+	return false;
+}
+
+// Helper for storing input to groups while saving. Iterates through list of 
+// time elements, matching the pairs together, then translates to correct
+// format. Returns the formatted list of times.
+function matchStartEndTimeNodes(elementList, groupNum) {
+	let len = elementList.length;
+	if (len < 1) { // case of no times
+		return [];
+	}
+
+	// get count of time pairs in this group
+	let timeDiv = document.getElementById("timeDiv" + groupNum);
+	let timeCount = timeDiv.dataset.paircount;
+
+	// create empty list big enough for all the time pairs
+	let timePairs = [];
+	for (let i = 0; i < timeCount; i++) {
+		timePairs.push(["", ""]);
+	}
+
+	// for all the time nodes, fill in their positon on the timePairs array
+	elementList.forEach(function(element) {
+		if (element.value === "") {
+			return;
+		}
+
+		// get which pair it is out of all the time nodes
+		let index = parseInt(element.dataset.timePair);
+		if (isNaN(index)) {
+			console.log("time pair count not an int");
+			return;
+		}
+		index -= 1;
+
+		// figure what position it is within its pair (start or end)
+		let pairIndex = 1;
+		if (element.dataset.type === "startTime") {
+			pairIndex = 0;
+		}
+
+		// the following should never happen, just in case: 
+		if (index >= timePairs.length || index < 0) {
+			console.log("timePairs array not enough room for start and end!");
+			console.log(index);
+			console.log(timePairs);
+			console.log(timePairs.length);
+			return;
+		}
+
+		timePairs[index][pairIndex] = element.value;
+	});
+
+
+	let finalTimes = [];
+
+	// iterate through each of the stored times, translate to the correct format,
+	// if no time was saved (left blank), then do not push it to the final time
+	// list. 
+	for (let i = 0; i < timePairs.length; i++) {
+		timePairs[i] = timeToMinutes(timePairs[i]);
+
+		// right here do check for if it lasts over midngiht and if so then
+		// add another item right after to deal with!!! split it up!! 
+		// 1439
+
+		if (timePairs[i][0] != -1 || timePairs[i][1] != -1) {
+			finalTimes.push(timePairs[i]);
+		}
+	}
+	return finalTimes;
+}
+
+// sites is an array of 
+// strings; exclude is an array of strings times is an array of 
+// two length arrays (first element is start time, second is end 
+// time, ints); days is a 7-array of booleans; active is a boolean 
+// true or false; name is a string
+function Group(name, active, sites, excludes, times, days) {
+	this.name = name;
+	this.active = active;
+	this.sites = sites;
+	this.excludes = excludes;
+	this.times = times;
+	this.days = days;
+}
 
 const moreGroups = document.getElementById("moreGroups");
 moreGroups.addEventListener("click", function() {
@@ -182,7 +327,17 @@ moreGroups.addEventListener("click", function() {
 // 24 hour time.
 // Example: [5, 613] --> ["00:05", "10:13"]
 function minutesToTime(minutes) {
-	for (let i = 0; i < 2; i++) {
+	const len = minutes.length;
+	if (len < 1) {
+		return ["", ""];
+	}
+
+	for (let i = 0; i < len; i++) {
+		if (minutes[i] == -1) {
+			minutes[i] = "";
+			continue;
+		}
+
 		let hh = Math.trunc(minutes[i] / 60);
 		hh = hh.toString();
 		if (hh.length < 2) {
@@ -204,7 +359,16 @@ function minutesToTime(minutes) {
 // calculate minutes by hh*60 + mm
 // example: ["00:05", "11:59"] --> [5, 1439]
 function timeToMinutes(time) {
-	for (let i = 0; i < 2; i++) {
+	const len = time.length;
+	if (len < 1) {
+		return [-1, -1];
+	}
+	for (let i = 0; i < len; i++) {
+		if (time[i] === undefined || time[i].length < 5) {
+			time[i] = -1;
+			continue;
+		}
+
 		let hh = parseInt(time[i]); // parses up till it's not an int, the :
 		let mm = parseInt(time[i].substring(3));
 		if (isNaN(hh) || isNaN(mm)) {
@@ -352,8 +516,6 @@ function drawGroup(groupNum, group) {
 	thirdsDiv.appendChild(rightGroupDiv);
 
 	groupDiv.appendChild(thirdsDiv);
-	// groupDiv.appendChild(blankLineElement());
-	// groupDiv.appendChild(document.createElement("hr"));
 	groupDiv.appendChild(blankLineElement());
 	allGroupsDiv.appendChild(groupDiv);
 }
@@ -383,16 +545,12 @@ function cleanGroupForDraw(groupNum, group) {
 		group.excludes = ["",""];
 	}
 
-	if (group.times === undefined) {
+	if (group.times === undefined || group.times.length < 1) {
 		group.times = [["", ""]];
 	} else {
-		console.log("should be in minutes:");
-		console.log(group.times);
 		for (let i = 0; i < group.times.length; i++) {
 			group.times[i] = minutesToTime(group.times[i]);
 		}
-		console.log("shouldbe in time:");
-		console.log(group.times);
 	}
 
 	if (group.days === undefined) {
@@ -573,35 +731,3 @@ function paragraphElement(text) {
 	newPara.innerText = text;
 	return newPara;
 }
-
-// sites is an array of 
-// strings; exclude is an array of strings times is an array of 
-// two length arrays (first element is start time, second is end 
-// time, ints); days is a 7-array of booleans; active is a boolean 
-// true or false
-function Group(name, active, sites, excludes, times, days) {
-	this.name = name; 
-	this.sites = sites;
-	this.excludes = excludes;
-	this.times = times;
-	this.days = days;
-	this.active = active;
-}
-
-// // If the button is being hovered over when this function is called, 
-// // then it will no longer be inverted coloring. This is on purpose 
-// // so that the change in color between green and blue is more clear 
-// // than just the small text changing. 
-// function swapClicked(button, activeButton) {
-// 	if (button.className == "selected") {
-// 		button.className = "unselected";
-// 		if (activeButton) {
-// 			button.innerHTML = "off";
-// 		}
-// 	} else {
-// 		button.className = "selected";
-// 		if (activeButton) {
-// 			button.innerHTML = "on";
-// 		}
-// 	}
-// }

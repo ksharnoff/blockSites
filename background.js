@@ -53,21 +53,14 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 	updateCurrentBlock();
 });
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendReponse) {
+chrome.runtime.onMessage.addListener(async function(request, sender, sendResponse) {
 	console.log("got a message!!!!! <--------");
 	console.log(request);
 
 	if (request === undefined || request.task === undefined) {
 		// do nothing! :D
 	} else if (request.task === "updateCurrentBlock") {
-		updateCurrentBlock().then(function (value) {
-			console.log("response to send back:");
-			console.log(value);
-			if (value !== undefined && value !== null) {
-				sendReponse({response: "testing testing some failure"});
-			}
-			// return false;
-		});
+		updateCurrentBlock();
 	} else if (request.task === "blockAll") {
 		blockAllSwap();
 	} else if (request.task === "pause") {
@@ -77,18 +70,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendReponse) {
 	}
 });
 
-// chrome.runtime.onMessage.addListener(function(request, sender, sendReponse) {
-// 	console.log("got a message!!!!! <--------");
-// 	console.log(request);
-
-// 	sendReponse({response: "testing testing 123"});
-// });
-
 chrome.storage.onChanged.addListener(function(changes) {
 	for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
 		// if any changes to config are detected, update! 
 		if (key === "config") {
 			updateCurrentBlock();
+			return;
 		}
 	}
 });
@@ -185,24 +172,21 @@ function blockAllSwap() {
 	});
 }
 
-
 // To coordinate the functions about updating the current block
 // Mainly an async function to get config from storage and then to calculate
 // calculate what to block and when and then write currentBlock to storage. 
 function updateCurrentBlock() {
-	return getConfig()
+	getConfig()
 	.then(function(value) {
 		if (value == null) {
 			console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
 			// if there isn't any stored config, then set an alarm for hour to recheck! 
 			createErrorAlarm(60);
-			return "Failed to update blocked sites: couldn't find settings in storage"; 
 		} 
-		return calculateBlock(value);
+		calculateBlock(value);
 	})
 	.catch(function(value) {
 		console.log("Failed to get config from storage");
-		return;
 	})
 }
 
@@ -228,7 +212,8 @@ function calculateBlock(config) {
 		// alarm for midnight!
 		// (if they change settings or blockAll button, new alarm will go off then)
 		createErrorAlarm(-1);
-		return writeCurrentBlock(sitesBlock, sitesExclude);
+		writeCurrentBlock(sitesBlock, sitesExclude);
+		return;
 	}
 
 	const today = new Date();
@@ -252,6 +237,9 @@ function calculateBlock(config) {
 
 		// iterate through each time pair of the current group
 		for (let time of g.times) {
+			if (time.length < 2 || time[0] < 0 || time[1] < 0) { // if only start or end time
+				continue;
+			}
 			// if at or after start time and before ending time:
 			if (nowMinutes >= time[0] && nowMinutes < time[1]) {
 
@@ -278,7 +266,7 @@ function calculateBlock(config) {
 
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
-	return writeCurrentBlock(sitesBlock, sitesExclude);
+	writeCurrentBlock(sitesBlock, sitesExclude);
 }
 
 // adds all the values in the array to the map, returning the map
@@ -324,9 +312,7 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 	if (chrome.runtime.lastError) {
 	 	console.log("chrome runtime last error exists! failed to write to storage!");
         console.log(chrome.runtime.lastError);
-        return chrome.runtime.lastError;
     } 
-    return "success";
 }
 
 // easy function that will set nowMinutes in order to
@@ -360,10 +346,11 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 		expireMinutes = 1439;
 	}
 
-	// the alarm will be 1 minute late in order to garentee that it happens, 
-	// imagine the scenario of an alarm begin set for 0 minutes and it not working right
-	// IDEA maybe only add 0.5 minutes??? can I use decimals here?
-	let minutesAlarm = 1 + expireMinutes-nowMinutes;
+	let minutesAlarm = expireMinutes-nowMinutes;
+
+	if (minutesAlarm < 1) {
+		minutesAlarm = 1;
+	}
 
 	console.log("Creating alarm! expire at " + expireMinutes + " now is " + nowMinutes + "; will expire in " + minutesAlarm);
 
@@ -384,7 +371,6 @@ function timeToMinutes(time) {
 function dateToTime(date) {
 	return date.getMinutes() + (date.getHours() * 100);
 }
-
 
 // Function to coordinate the function calls to see if the current url should be
 // blocked. Mainly just dealing with the promise of getting the data from the
