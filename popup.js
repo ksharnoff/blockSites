@@ -14,7 +14,7 @@ import { getConfig, swapClicked } from "./sharedFunctions.js";
 
 let errorMessage = document.getElementById("errorMessage");
 
-// on window load, set up the correct text for the block all buttton
+// on window load, set up the correct text for the block all button
 // and create the event listener for that button
 window.addEventListener("load", function() {
 	getConfig()

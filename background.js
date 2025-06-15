@@ -10,7 +10,6 @@
 	blockAll, pause).
 */
 
-
 import { getConfig } from "./sharedFunctions.js";
 
 
@@ -44,7 +43,7 @@ const tempCurrentBlock = {
 
 // Upon initial installation or updating: 
 chrome.runtime.onInstalled.addListener(function(details) {
-	console.log("on installed listerner");
+	console.log("on installed listener");
 	if (details.reason === "install") {
 		console.log("installed!");
 
@@ -57,7 +56,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
 	} else {
 		console.log("updated!!!");
 
-		// code for writing in a currentblock for testing! 
+		// code for writing in a currentBlock for testing! 
 		// chrome.storage.local.set({"currentBlock": tempCurrentBlock});
 
 		// code for writing in a config for testing! 
@@ -142,7 +141,7 @@ function calculateBlock(config) {
 
 	// array of websites to be written to storage to be blocked
 	let sitesBlock = new Map();
-	// array of webistes to be excluded from blocking
+	// array of websites to be excluded from blocking
 	let sitesExclude = new Map();
 
 	// if later want to change that blockAll will only block all in that day then double check this!! 
@@ -228,7 +227,7 @@ function arrayAddToMap(map, arr) {
 	return map;
 }
 
-// Inputs a map and outpus an array made of the keys. Used for chaning the map
+// Inputs a map and outputs an array made of the keys. Used for changing the map
 // to array in writeCurrentBlock
 function mapToArray(map, arr) {
 	map.forEach(function(value, key, map) {
@@ -280,7 +279,7 @@ function createErrorAlarm(minutes) {
 	} else {
 		expire = nowMinutes + minutes;
 	}
-	// console.log("called create alarm on expire, nowminutes:");
+	// console.log("called create alarm on expire, nowMinutes:");
 	// console.log(expire);
 	// console.log(nowMinutes);
 
@@ -292,7 +291,7 @@ function createErrorAlarm(minutes) {
 function createAlarm(expireMinutes, nowMinutes, name) {
 	// should expire at midnight at the latest, if expire time is smaller 
 	// than now time that means the next day, so it should be midnight
-	// midnight is 23hours, 59 minutes which is 1,439 minutes
+	// midnight is 23 hours, 59 minutes which is 1,439 minutes
 	if (expireMinutes <= nowMinutes || expireMinutes > 1439) {
 		expireMinutes = 1439;
 	}
@@ -359,7 +358,7 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 // storage and then checking the url in validSite(). 
 // Always returns nothing.
 async function checkBlock(url, tabID) {
-	console.log("checkking if block!");
+	console.log("checking if block!");
 	// value is currentBlock
 	getCurrentBlock().then(function(value) {
 		if (value == null | value.sites == null)  {
@@ -378,7 +377,7 @@ async function checkBlock(url, tabID) {
 // Checks if the current url should be blocked according to the fetched
 // currentBlock. Calls blockTab if it should be blocked.
 function validSite(currentBlock, url, tabID) {
-	console.log("checkking if valid site!");
+	console.log("checking if valid site!");
 	console.log("currentBlock");
 	console.log(currentBlock);
 	let excluded = false;
@@ -403,7 +402,7 @@ function validSite(currentBlock, url, tabID) {
 	return;
 }
 
-// Fetchs the stored currentBlock, the sites that should be blocked now until
+// Fetches the stored currentBlock, the sites that should be blocked now until
 // the next alarm goes off. Returns null if failed.
 // Maybe should add check for if error? 
 async function getCurrentBlock() {
