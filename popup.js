@@ -10,32 +10,8 @@
 */
 
 
-import { getConfig, swapClicked } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn } from "./sharedFunctions.js";
 
-let errorMessage = document.getElementById("errorMessage");
-
-// on window load, set up the correct text for the block all button
-// and create the event listener for that button
-window.addEventListener("load", function() {
-	getConfig()
-	.then(function (value) {
-		let blockAllButton = document.getElementById("blockAll");
-
-		if (value.blockAll) {
-			blockAllButton.className = "selected";
-			blockAllButton.innerHTML = "on";
-		} else {
-			blockAllButton.className = "unselected";
-			blockAllButton.innerHTML = "off";
-		}
-
-		blockAllButton.addEventListener("click", function() {
-			swapClicked(blockAllButton, true);
-			sendMessageToBackground({task: "blockAll"})
-		})
-	});
-
-});
 
 // Creates new tab of settings.html
 document.getElementById("settings").addEventListener("click", function() {
@@ -47,26 +23,65 @@ document.getElementById("help").addEventListener("click", function() {
 	chrome.tabs.create({ url: chrome.runtime.getURL("../help.html")});
 });
 
-// Sends the inputted message, background.js listens to it
-// If get a response or error, then logs it in the errorMessage
+
+let errorMessage = document.getElementById("errorMessage");
+
+// Sends the inputted message, which background.js will listen for. If an
+// error is gotten in return, errorMessage is modified. 
 async function sendMessageToBackground(message) {
 	chrome.runtime.sendMessage(message)
 	.then(function () {}, function (error) { 
 		if (error === undefined || error == null) {
 			return;
 		}
-		console.log("error in sending message from popup js to background")
+		console.log("Error in sending message from popup to background")
 		console.log(error); 
 		errorMessage.innerHTML = error;
 	});
 }
 
+// On window load, set up the correct selectiveness for the block all button
+// and create the event listener for the block all button.
+window.addEventListener("load", function() {
+	getConfig()
+	.then(function (value) {
+		let blockAllButton = document.getElementById("blockAll");
+
+		// if no blockAll was previously stored
+		if (value === null || value.blockAll === undefined) {
+			blockAllButton.className = "unselected";
+			blockAllButton.innerHTML = "off";
+		} else {
+			if (value.blockAll) {
+				blockAllButton.className = "selected";
+				blockAllButton.innerHTML = "on";
+			} else {
+				blockAllButton.className = "unselected";
+				blockAllButton.innerHTML = "off";
+			}
+		}
+
+		blockAllButton.addEventListener("click", function() {
+			swapClicked(blockAllButton, true);
+
+			sendMessageToBackground(
+				{task: "blockAll", active: isButtonOn(blockAllButton)}
+			);
+		});
+	});
+});
+
+// Once the recheck button is pressed, a message is sent to the background
+// script to re calculate the currentBlock.
 document.getElementById("recheck").addEventListener("click", function() {
 	errorMessage.innerHTML = "";
 	sendMessageToBackground({task: "updateCurrentBlock"});
 	// errorMessage.innerHTML = "Rechecked!";
 });
 
+// Once the pause button is pressed, the contents of the pause input is read
+// and if it is a valid number, then a message is sent to the background to 
+// make a pause for that many minutes. 
 document.getElementById("pauseButton").addEventListener("click", function() {
 	errorMessage.innerHTML = "";
 	let amountStr = document.getElementById("pauseAmount").value;
@@ -78,6 +93,8 @@ document.getElementById("pauseButton").addEventListener("click", function() {
 		return;
 	}
 
+	// blockAmountStr will be used to print to errorMessage to assure the user
+	// that their request went through
 	let blockAmountStr = "for " + amount + " minutes";
 
 	if (amount < 1) {
@@ -88,20 +105,20 @@ document.getElementById("pauseButton").addEventListener("click", function() {
 		blockAmountStr = "for 24 hours";
 	} 
 
-	const message = {task: "pause", time: amount};
+	// If there is an error in sending the message, it will overwrite this
+	errorMessage.innerHTML = "Pausing blocking " + blockAmountStr;
 
-	sendMessageToBackground(message)
-	.then(function() {
-		errorMessage.innerHTML = "Pausing blocking " + blockAmountStr;
-	});
+	const message = {task: "pause", time: amount};
+	sendMessageToBackground(message);
 });
 
+// Once the pause midnight button is pressed, a message is sent to the background
+// to pause until midnight. 
 document.getElementById("pauseMidnight").addEventListener("click", function() {
-	errorMessage.innerHTML = "";
-	sendMessageToBackground({task: "pause", time: -1})
-	.then(function () {
-		errorMessage.innerHTML = "Pausing blocking until midnight";
-	})
+	// If there is an error in sending the message, it will overwrite this
+	errorMessage.innerHTML = "Pausing blocking until midnight";
+
+	sendMessageToBackground({task: "pause", time: -1});
 });
 
 

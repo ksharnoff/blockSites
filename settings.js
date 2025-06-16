@@ -8,13 +8,28 @@
 	from storage and saving changes.
 */
 
+/*
 // TO DO:
-	// give things names || roles for screen readers
-	// test with config and currentBlock being null or DNE in storage -- do the errors work? 
-	// README example images
-	// release on github!, change version number in manifest 
+	- give things names || roles for screen readers
+	- README example images
+	- release on github!, change version number in manifest 
+	- fix back button navigation so that it works!!
+		- this is a known issue:
+			- https://groups.google.com/a/chromium.org/g/chromium-extensions/c/n3vFlEYueyo?pli=1
+			- https://issues.chromium.org/issues/40823321
+		- thoughts to try next time: 
+			- manually push same tab to history after setting the origin url? 
+			- try to find more documentation for goBack()
+				--> how / where does the history store what URLS were apart of
+					the same tab? 
+			- read more of the discussions on the chromium issues page
+			- look at how other chrome extensions block theirs if not doing 
+				chrome.tabs.update!
+			- leave it? (already is improved because can back navigate and it does
+				not delete the current tab!! :D)
+*/
 	
-import { getConfig, swapClicked } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -35,18 +50,24 @@ window.addEventListener("load", function() {
 
 		let blockAllButton = document.getElementById("blockAll");
 
-		if (value.blockAll) {
-			blockAllButton.className = "selected";
-			blockAllButton.innerHTML = "on";
-		} else {
+		// if nothing stored for blockAll previously
+		if (value === null || value.blockAll === undefined) {
 			blockAllButton.className = "unselected";
 			blockAllButton.innerHTML = "off";
+		} else {
+			if (value.blockAll) {
+				blockAllButton.className = "selected";
+				blockAllButton.innerHTML = "on";
+			} else {
+				blockAllButton.className = "unselected";
+				blockAllButton.innerHTML = "off";
+			}
 		}
 		blockAllButton.addEventListener("click", function() {
 			swapClicked(blockAllButton, true);
 		});
 
-		if (value == null || value.groups.length < 1) {
+		if (value == null || value.groups === undefined || value.groups.length < 1) {
 			drawGroup(1, null);
 			allGroupsDiv.dataset.groupCount = 1;
 		} else {
@@ -304,15 +325,6 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 		}
 	}
 	return finalTimes;
-}
-
-// Inputs a button element, returns true if it was selected and green, false
-// otherwise. 
-function isButtonOn(element) {
-	if (element.className === "selected") {
-		return true;
-	} 
-	return false;
 }
 
 // Returns a Group object where name is a string; active is a boolean; sites

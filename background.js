@@ -12,64 +12,45 @@
 
 import { getConfig } from "./sharedFunctions.js";
 
-
-const tempConfig = {
-	groups: [
-		{
-			name: "wikipedia",
-			active: true, 
-			sites: ["wikipedia.org", "mail.google.com"],
-			excludes: ["en.wikipedia.org/wiki/California"],
-			times: [[0, 190], [1260, 1435]],
-			days: [true, true, false, true, true, true, true]
-		},
-		{
-			name: "socials",
-			active: false, 
-			sites: ["facebook.com", "gmail.com"],
-			excludes: [],
-			times: [[5, 613], [1290, 1439]],
-			days: [true, false, true, true, true, false, true]
-		},
-	],
-	blockAll: false
-};
-
-const tempCurrentBlock = {
-	sites: ["wikipedia.org", "mail.google.com"], 
-	exclude: ["en.wikipedia.org/wiki/California"]
-}
-
-
 // Upon initial installation or updating: 
 chrome.runtime.onInstalled.addListener(function(details) {
-	console.log("on installed listener");
 	if (details.reason === "install") {
-		console.log("installed!");
+		console.log("installed!!");
 
-		clearAlarmsPrintBytesUsed();
+		getConfig()
+		.then(function(value) {
+			clearAlarmsPrintBytesUsed();
 
-		updateCurrentBlock();
+			// if no config stored previously, make an empty one
+			if (value === null) {
+				const config = {
+					groups: [],
+					blockAll: false
+				}
 
-		// automatically open the settings page! 
-		chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
-	} else {
+				chrome.storage.local.set({
+					config: config
+				});
+			} 
+
+			// call updateCurrentBlock even if nothing in config to set up cycle
+			// of alarms later to check if anything was added
+			updateCurrentBlock();
+
+			// automatically open the settings page! 
+			chrome.tabs.create({ url: chrome.runtime.getURL("../settings.html")});
+		});
+	} else { // extension update, chrome update, or module update
 		console.log("updated!!!");
 
-		// code for writing in a currentBlock for testing! 
-		// chrome.storage.local.set({"currentBlock": tempCurrentBlock});
-
-		// code for writing in a config for testing! 
-		// chrome.storage.local.set({"config": tempConfig});
-
 		clearAlarmsPrintBytesUsed();
 		updateCurrentBlock();
 
-		// testing code!!! prints all items in storage
-		// chrome.storage.local.get(null, function(items) {
-		// 	console.log("all items in storage!");
-		// 	console.log(items);
-		// });
+		// Testing code to print all items in storage
+		chrome.storage.local.get(null, function(items) {
+			console.log("All items in storage:");
+			console.log(items);
+		});
 	}
 });
 
@@ -118,10 +99,10 @@ function updateCurrentBlock() {
 	getConfig()
 	.then(function(value) {
 		if (value == null) {
-			console.log("Tried to fetch config from storage for \
-						 updateCurrentBlock, it is null");
+			console.log("Tried to fetch config from storage for updateCurrentBlock, it is null");
 			// if no stored config, then set an alarm to recheck! 
 			createErrorAlarm(120);
+			return;
 		} 
 		calculateBlock(value);
 	})
@@ -328,9 +309,9 @@ function dateToMinutes(date) {
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 
 	console.log("tab updated " + tab.url);
-	// console.log(tab);
-	console.log("change info:");
-	console.log(changeInfo);
+	// // console.log(tab);
+	// console.log("change info:");
+	// console.log(changeInfo);
 
 	// if the change of the tab is that it has been unloaded from memory
 	// or that it is currently loading don't do anything! another event
@@ -339,13 +320,13 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 	// being used -- fails if highlighted in another window....
 	if (changeInfo.discarded || changeInfo.status === "loading" ||
 	   changeInfo.favIconUrl || (!tab.highlighted)) {
-		console.log("no need to block! tab still loading or not in use!");
+		console.log("No need to block! Tab still loading or not in use!");
 		return;
 	}
 
 	// no need to block if on a page of the chrome extension
-	if (tab.url.substring(0,20).includes("chrome-extension://")) {
-		console.log("no need to block! you're on the chrome-extension page");
+	if (tab.url.substring(0,20) === "chrome-extension://") {
+		console.log("No need to block! You're on the chrome-extension page");
 		return;
 	}
 
@@ -358,10 +339,10 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 // storage and then checking the url in validSite(). 
 // Always returns nothing.
 async function checkBlock(url, tabID) {
-	console.log("checking if block!");
+	// console.log("checking if block!");
 	// value is currentBlock
 	getCurrentBlock().then(function(value) {
-		if (value == null | value.sites == null)  {
+		if (value === undefined || value === null || value.sites === undefined)  {
 			console.log("Tried to fetch currentBlock from storage for validSite, it is null");
 			return; 
 		}
@@ -377,9 +358,9 @@ async function checkBlock(url, tabID) {
 // Checks if the current url should be blocked according to the fetched
 // currentBlock. Calls blockTab if it should be blocked.
 function validSite(currentBlock, url, tabID) {
-	console.log("checking if valid site!");
-	console.log("currentBlock");
-	console.log(currentBlock);
+	// console.log("checking if valid site!");
+	// console.log("currentBlock");
+	// console.log(currentBlock);
 	let excluded = false;
 
 	for (let s of currentBlock.sites) {
@@ -392,23 +373,21 @@ function validSite(currentBlock, url, tabID) {
 				}
 			}
 			if (!excluded) {
-				console.log("should be blocked!");
+				// console.log("should be blocked!");
 				blockTab(tabID);
 				return;
 			}
 		}
 	}
-	console.log("shouldn't block!");
+	// console.log("shouldn't block!");
 	return;
 }
 
 // Fetches the stored currentBlock, the sites that should be blocked now until
 // the next alarm goes off. Returns null if failed.
-// Maybe should add check for if error? 
 async function getCurrentBlock() {
-	console.log("async trying to get current block!");
 	let result = await chrome.storage.local.get("currentBlock");
-	if (result == undefined) {
+	if (result == undefined || result.currentBlock === undefined) {
 		return null;
 	}
 	return result.currentBlock; 
@@ -416,7 +395,9 @@ async function getCurrentBlock() {
 
 // Blocks tab at tabId, redirects to the blocked.html page
 function blockTab(tabId) {
+	// chrome.history.addURL()
 	chrome.tabs.update(tabId, {url: "../blocked.html", active: true});
+	// chrome.tabs.goBack(tabID);
 }
 
 
@@ -431,10 +412,15 @@ chrome.runtime.onMessage.addListener(async function(request, sender, sendRespons
 
 	if (request === undefined || request.task === undefined) {
 		// do nothing! :D
-	} else if (request.task === "updateCurrentBlock") {
+		return;
+	}
+
+	if (request.task === "updateCurrentBlock") {
 		updateCurrentBlock();
 	} else if (request.task === "blockAll") {
-		blockAllSwap();
+		if (request.active !== undefined) {
+			blockAllSwap(request.active);
+		}
 	} else if (request.task === "pause") {
 		if (request.time !== undefined) {
 			pauseBlock(request.time);
@@ -463,17 +449,28 @@ function pauseBlock(time) {
 	writeCurrentBlock(new Map(), new Map());
 }
 
-// Edits the config stored to swap blockAll to the opposite: true to false, etc. 
-// Called after receiving a message from the popup
-function blockAllSwap() {
+// Edits the config stored to swap the blockAll in config to the inputted
+// bool, active. Called after receiving a message from the popup. If there
+// was not previously a config in storage, then one is created. 
+function blockAllSwap(active) {
 	getConfig()
 	.then(function(value) {
+		// if previously was nothing in storage, create blank config
 		if (value == null || value.blockAll == null) {
-			console.log("Tried to block all from a popup request, it is null!")
+			const config = {
+				groups: [],
+				blockAll: active
+			}
+
+			chrome.storage.local.set({
+				config: config
+			});
 			return;
 		}
 
-		value.blockAll = !value.blockAll;
+		// else, edit the currently stored item and re-set it
+
+		value.blockAll = active;
 
 		chrome.storage.local.set({
 			config: value

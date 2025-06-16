@@ -4,7 +4,7 @@ Customizable Chrome extension to block groups of websites during set times and d
 
 This solves the problems of having different websites blocked for different times, easy ability to activate or deactivate groups of websites, easy timed pausing of blocking (to avoid pausing by turning off the extension), and preserving back button navigation after a site was blocked. 
 
-All code is licensed under [MIT](https://github.com/ksharnoff/blockSites/blob/main/LICENSE), images are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+All code is licensed under [MIT](https://github.com/ksharnoff/blockSites/blob/main/LICENSE), images are licensed under [CC BY-NC-SA 4.0](https://github.com/ksharnoff/blockSites/blob/main/images/LICENSE).
 <!-- change the above link for CC license to link to the license in the repo -->
 
 ## features: 

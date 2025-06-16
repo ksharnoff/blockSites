@@ -28,12 +28,25 @@ export function swapClicked(button, activeButton) {
 	}
 }
 
-// returns config object from storage or null if it is not in storage
+// Returns config object from storage or null if it is not in storage
 // Used in background.js, popup.js, and settings.js
 export async function getConfig() {
 	let result = await chrome.storage.local.get("config");
-	if (result == undefined) {
+
+	if (result == undefined || result.config == undefined) {
 		return null;
 	}
+
 	return result.config;
+}
+
+
+// Inputs a button element, returns true if it was selected and green, false
+// otherwise. 
+// Used in settings and popup
+export function isButtonOn(element) {
+	if (element.className === "selected") {
+		return true;
+	} 
+	return false;
 }
