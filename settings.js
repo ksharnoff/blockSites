@@ -7,27 +7,6 @@
 	This is the functionality of the settings page: getting the previous settings
 	from storage and saving changes.
 */
-
-/*
-// TO DO:
-	- give things names || roles for screen readers
-	- README example images
-	- release on github!, change version number in manifest 
-	- fix back button navigation so that it works!!
-		- this is a known issue:
-			- https://groups.google.com/a/chromium.org/g/chromium-extensions/c/n3vFlEYueyo?pli=1
-			- https://issues.chromium.org/issues/40823321
-		- thoughts to try next time: 
-			- manually push same tab to history after setting the origin url? 
-			- try to find more documentation for goBack()
-				--> how / where does the history store what URLS were apart of
-					the same tab? 
-			- read more of the discussions on the chromium issues page
-			- look at how other chrome extensions block theirs if not doing 
-				chrome.tabs.update!
-			- leave it? (already is improved because can back navigate and it does
-				not delete the current tab!! :D)
-*/
 	
 import { getConfig, swapClicked, isButtonOn } from "./sharedFunctions.js";
 
@@ -604,9 +583,8 @@ function drawMoreInputs(type, groupNum) {
 	let div = document.getElementById(type + "Div" + groupNum);
 
 	if (div === null) {
-		console.log("Failed drawing inputs from more button as cannot find \
-		 			the div (group) supposed to attach to, " + type + "Div" + 
-		 			groupNum);
+		console.log("Failed drawing inputs from more button as cannot find the div (group) supposed to attach to, " + 
+			type + "Div" + groupNum);
 		return;
 	}
 
@@ -617,8 +595,7 @@ function drawMoreInputs(type, groupNum) {
 		// get the count of total time pairs from the div
 		let newPairCount = parseInt(div.dataset.paircount);
 		if (isNaN(newPairCount)) {
-			console.log("Failed to draw more time inputs as the pair count of \
-				the time div cannot be turned into an int");
+			console.log("Failed to draw more time inputs as the pair count of the time div cannot be turned into an int");
 			return;
 		}
 		newPairCount++;
@@ -637,8 +614,7 @@ function drawMoreInputs(type, groupNum) {
 
 	// if failed to make a new element, return
 	if (newInput == null) {
-		console.log("Failed to make newInput while drawing new input from \
-			'more' button, likely type wrong");
+		console.log("Failed to make newInput while drawing new input from 'more' button, likely type wrong");
 		return;
 	}
 

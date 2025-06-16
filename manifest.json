@@ -2,11 +2,10 @@
    "manifest_version": 3,
 	"name": "blockSites",
 	"author": "Kezia Sharnoff",
-	"version": "0.1.0",
-	"description": "Block sites during work periods",
+	"version": "1.0.0",
+	"description": "Block groups of websites during work periods",
 	"action": {
 		"default_popup": "popup.html"
-
 	},
 	"icons": {
     "16": "icon.png",
@@ -19,8 +18,8 @@
    	"type": "module"
    },
 	"permissions": [
-		"storage", // for telling when a tab is updated & that tab's components  
-		"tabs", // for seeing when a tab is updated (to then check if allowed)
-		"alarms" // to change what sites are allowed when the current expires 
+		"storage", 
+		"tabs",
+		"alarms" 
 	]
 }

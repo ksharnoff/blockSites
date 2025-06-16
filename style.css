@@ -6,10 +6,16 @@
 	- style.css
 */
 
+:root {
+    --foreground: #e5e5e5; /* white */
+    --background: black; /* black */
+    --offButton: rgb(106, 139, 166); /* blue */
+    --onButton: rgb(35, 149, 96); /* green */
+}
 
 body {
-	background-color: black;
-	color: #e5e5e5;
+	background-color: var(--background);
+	color: var(--foreground);
 	text-align: left;
 	font-family: Monaco, monospace;
 	font-size: 18px;
@@ -21,7 +27,7 @@ p {
 }
 
 button {
-	border: 1px solid #e5e5e5;
+	border: 1px solid var(--foreground);
 	text-align: left;
 	font-size: 16px;
 	font-family: Monaco, monospace;
@@ -30,33 +36,33 @@ button {
 }
 
 .unselected {
-	background-color: rgb(106, 139, 166);
-	color: #e5e5e5;
+	background-color: var(--offButton);
+	color: var(--foreground);
 }
 
 .unselected:hover {
-	background-color: #e5e5e5;
-	color: rgb(106, 139, 166);
+	background-color: var(--foreground);
+	color: var(--offButton);
 	cursor: pointer;
 }
 
 .selected {
-	background-color: rgb(35, 149, 96);
-	color: #e5e5e5;
+	background-color: var(--onButton);
+	color: var(--foreground);
 }
 
 .selected:hover {
-	background-color: #e5e5e5;
-	color: rgb(35, 149, 96);
+	background-color: var(--foreground);
+	color: var(--onButton);
 	cursor: pointer;
 }
 
 input {
-	background-color: #6384A1;
-	color: #e5e5e5;
+	background-color: var(--offButton);
+	color: var(--foreground);
 	font-size: 16px;
 	font-family: Monaco, monospace;
-	border: 1px solid #e5e5e5;
+	border: 1px solid var(--foreground);
 	margin: 4px;
 	border-radius: 5px;
 }
@@ -78,7 +84,7 @@ input[type=time] {
 .container{
 	display: grid;
 	grid-template-columns: auto auto 33%;
-	border: 1px solid #e5e5e5;
+	border: 1px solid var(--foreground);
 	border-radius: 5px;
 	background-color: #1a1a1a;
 }
@@ -94,19 +100,5 @@ input[type=time] {
 }
 
 a {
-	color: #e5e5e5;
+	color: var(--foreground);
 }
-
-/* 
-	white: #e5e5e5
-	a bit darker gray of white: #C9C9C9
-	black: black
-	lavendre: rgb(149, 136, 204)
-	blue: rgb(106, 139, 166) OR #6a8ba6
-	green of icon or on button: #38ec9c
-
-
-	new colors: 
-	blue: #6384A1
-	green: rgb(35, 149, 96) OR "#239560"
-*/
