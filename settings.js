@@ -69,7 +69,10 @@ function hideLoadingMessage() {
 // Once the save button is pressed, iterate through all the groups, get all the
 // inputs, make it into Group objects, and save to storage as "config".
 let saveButton = document.getElementById("save");
-saveButton.addEventListener("click", function() {
+saveButton.addEventListener("click", save);
+function save() {
+	console.log("SAVED!")
+
 	// get total group count
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
 	if (isNaN(newGroupCount)) {
@@ -102,13 +105,38 @@ saveButton.addEventListener("click", function() {
 		config: config
 	}).then(function () {
 		// give the user feedback that it saved! 
-		saveButton.innerHTML = "SAVED!";
+		saveButton.innerHTML = "saved!";
 
 		// then go back to normal text
 		setTimeout(function () {
-			saveButton.innerHTML = "SAVE GROUPS";
+			saveButton.innerHTML = "save";
 		}, 1500)
 	});
+}
+
+// Sets a timer specified by waitTime and once it has passed that time without
+// being called again, the callback is run. This is used to save the inputs 
+// 500ms after the last click or key press
+// This debounce function and the related listeners are from
+// https://stackoverflow.com/a/75988895
+const debounce = (callback, waitTime) => {
+  let timeoutId = null;
+  return (...args) => {
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => {
+      callback(...args);
+    }, waitTime);
+  };
+}
+const saveAfterWait = debounce((event) => {
+	save()
+}, 500);
+document.addEventListener("click", saveAfterWait)
+document.addEventListener("keydown", saveAfterWait)
+
+// Save the data once the page is closed
+window.addEventListener("beforeunload", function(){
+   save();
 });
 
 // The names of the day selection buttons, used to draw the groups and save the
@@ -416,7 +444,6 @@ function drawGroup(groupNum, group) {
 
 	// divs for each column
 	let leftGroupDiv = document.createElement("div");
-	let centerGroupDiv = document.createElement("div");
 	let rightGroupDiv = document.createElement("div");
 
 
@@ -510,7 +537,6 @@ function drawGroup(groupNum, group) {
 	rightGroupDiv.appendChild(moreInputsButton("exclude", "more sites", groupNum));
 
 	thirdsDiv.appendChild(leftGroupDiv);
-	thirdsDiv.appendChild(centerGroupDiv);
 	thirdsDiv.appendChild(rightGroupDiv);
 
 	groupDiv.appendChild(thirdsDiv);
@@ -544,7 +570,7 @@ function cleanGroupForDraw(groupNum, group) {
 		group.sites = ["", ""];
 	} 
 	if (group.excludes == undefined) {
-		group.excludes = ["",""];
+		group.excludes = [""];
 	}
 
 	if (group.times === undefined || group.times.length < 1) {

@@ -18,17 +18,18 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "width: 97%;">
-		<button style = "display: inline-block; margin: 5px; position: fixed; right: 1%; text-align: center; " id = "helpButton" class = "unselected"> help! </button>
+		<div class = ".twoColumns" style = "right: 1%; position: fixed;">
+			<button id = "save" style = "display: inline-block; margin-right: 1px; text-align: center;" data-groupcount = "0" class = "unselected" >  save </button>
+			<button id = "helpButton" style = "display: inline-block; margin-left: 1px; text-align: center; " class = "unselected"> help! </button>
+		</div>
+
 
 		<img src = "icon.png" class = "logo" 
 			alt = "green square, the block site browser extension icon">
-		<!-- maybe move the title to be on the same line as the green square????  -->
-		<h2 style="margin: 0px;"> block settings </h2>
-
-		<p style = "display: inline-block; margin-right: 0px"> block all sites: </p>
+		<h2 style = "margin: 0px; display: inline-block;"> block sites settings </h2>
+		<br>
+		<p style = "display: inline-block; margin-right: 0px;"> block all sites: </p>
 		<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
-
-		<button id = "save" style = "width: 15%; font-size: 20px; position: fixed; right: 42.5%; left: 42.5%; text-align: center;" data-groupcount = "0" class = "unselected" >  SAVE GROUPS </button>
 		<br>
 		<br>
 

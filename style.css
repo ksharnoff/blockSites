@@ -81,9 +81,14 @@ input[type=time] {
 	margin: 0px 5px 0px 5px;
 }
 
+.twoColumns {
+	display: grid;
+	grid-template-columns: auto auto;
+}
+
 .container{
 	display: grid;
-	grid-template-columns: auto auto 33%;
+	grid-template-columns: auto auto;
 	border: 1px solid var(--foreground);
 	border-radius: 5px;
 	background-color: #1a1a1a;
