@@ -23,14 +23,32 @@
 			<button id = "helpButton" style = "display: inline-block; margin-left: 1px; text-align: center; " class = "unselected"> help! </button>
 		</div>
 
-
 		<img src = "icon.png" class = "logo" 
 			alt = "green square, the block site browser extension icon">
-		<h2 style = "margin: 0px; display: inline-block;"> block sites settings </h2>
+		<h2 class = "title"> block sites settings </h2>
 		<br>
-		<p style = "display: inline-block; margin-right: 0px;"> block all sites: </p>
-		<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
 		<br>
+
+		<div class = "container">
+			<p style = "display: inline-block; margin-right: 0px;"> block all sites: </p>
+			<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
+
+			<p style = "display: inline-block; margin-right: 0px;"> (optional) redirect to URL: </p>
+			<input style = "display: inline-block; width: 370px; margin: 0px;" type = "text" id = "redirectURL" placeholder = "default: chrome extension blocked page">
+			<br>
+
+			<p style = "display: inline-block; margin-right: 0px;"> allow pausing: </p>
+			<button style = "display: inline-block; margin: 0px;" class = "selected" id = "blockPausing"> on </button>
+
+			<!-- auto fill to tomorrow at same time -->
+			<p style = "display: inline-block; margin-right: 0px;"> block any settings changes until: </p>
+			<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockSettingsDate">
+			<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockSettingsTime">
+			<!-- <p style = "display: inline-block; margin-right: 0px;"> block any settings changes for: </p>
+			<input style = "display: inline-block; width: 40px; margin: 0px;" type = "text" id = "blockSettings">
+			<p style = "display: inline-block; margin-left: 0px;"> minutes </p> -->
+		</div>
+
 		<br>
 
 		<p id = "loadingMessage" style = "position: absolute;"> The settings page is loading! If you can read this, then 1) it is loading slowly, 2) you are fast at reading, or 3) something has broken. You can check the console (right click -> inspect) to see if an error has been outputted. If the page looks like it loaded but you can see this, then there was an error that was not accounted for. </p>

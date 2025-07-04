@@ -18,15 +18,15 @@
 // names "your-image-here1.jpeg". Simple delete the double slashes at the 
 // beginning of the line and it will work!
 const images = [
-	"./images/fireworks.jpeg",
-	"./images/grass.jpeg",
+	"./images/fireworksCC4.0.jpeg",
+	"./images/grassCC4.0.jpeg",
 	// "./images/your-image-name-here1.jpeg",
 	// "./images/your-image-name-here2.jpeg",
 	// "./images/your-image-name-here3.jpeg",
-	"./images/squirrel.png",
-	"./images/geyser.jpeg",
-	"./images/bee.jpeg",
-	"./images/tree.jpeg"
+	"./images/squirrelCC4.0.png",
+	"./images/geyserCC4.0.jpeg",
+	"./images/beeCC4.0.jpeg",
+	"./images/treeCC4.0.jpeg"
 	];
 const altTexts = [
 	"two red circular fireworks erupting in black sky",
@@ -39,6 +39,7 @@ const altTexts = [
 	"bee on a pink petal on gray stone on the ground, with blurred green plants in the background", 
 	"green and orange tree leaves in front of blue sky with few clouds"
 	];
+
 
 // Once the page loads, chose a random photo to display, along with its alt
 // text. 
@@ -54,12 +55,12 @@ window.addEventListener("load", function() {
 
 	// set the copyright text if the image is one of Kezia's
 	switch (images[rand]) {
-	case "./images/fireworks.jpeg":
-	case "./images/grass.jpeg":
-	case "./images/squirrel.png":
-	case "./images/geyser.jpeg":
-	case "./images/bee.jpeg":
-	case "./images/tree.jpeg":
+	case "./images/fireworksCC4.0.jpeg":
+	case "./images/grassCC4.0.jpeg":
+	case "./images/squirrelCC4.0.png":
+	case "./images/geyserCC4.0.jpeg":
+	case "./images/beeCC4.0.jpeg":
+	case "./images/treeCC4.0.jpeg":
 		let copyright = "All images are licensed under ";
 		copyright += "<a href = 'https://creativecommons.org/licenses/by-nc-sa/4.0/'> CC BY-NC-SA 4.0 </a>";
 		copyright += "<br> Any usage of these images must provide attribution in the form of a link to the "; 

@@ -138,7 +138,7 @@ function calculateBlock(config) {
 		// alarm for midnight!
 		// (if they change settings or blockAll button, new alarm will go off then)
 		createErrorAlarm(-1);
-		writeCurrentBlock(sitesBlock, sitesExclude);
+		writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
 		return;
 	}
 
@@ -192,7 +192,7 @@ function calculateBlock(config) {
 
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
-	writeCurrentBlock(sitesBlock, sitesExclude);
+	writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
 }
 
 // Adds all values of the inputted array to the inputted map. This is useful
@@ -219,7 +219,7 @@ function mapToArray(map, arr) {
 
 // Inputs the sites to block map and sites to exclude map, then writes them to
 // storage as arrays in the currentBlock. 
-function writeCurrentBlock(sitesBlock, sitesExclude) {
+function writeCurrentBlock(sitesBlock, sitesExclude, redirectURL) {
 	let sitesBlockArr = [];
 	let sitesExcludeArr = [];
 
@@ -231,11 +231,14 @@ function writeCurrentBlock(sitesBlock, sitesExclude) {
 	console.log(sitesBlockArr);
 	console.log("excludes:");
 	console.log(sitesExcludeArr);
+	console.log("redirect:");
+	console.log(redirectURL);
 
 	chrome.storage.local.set({
 		currentBlock: {
 			"sites": sitesBlockArr, 
-			"excludes": sitesExcludeArr
+			"excludes": sitesExcludeArr,
+			"redirect": redirectURL
 		}
 	});
 	if (chrome.runtime.lastError) {
@@ -358,28 +361,19 @@ async function checkBlock(url, tabID) {
 // Checks if the current url should be blocked according to the fetched
 // currentBlock. Calls blockTab if it should be blocked.
 function validSite(currentBlock, url, tabID) {
-	// console.log("checking if valid site!");
-	// console.log("currentBlock");
-	// console.log(currentBlock);
-	let excluded = false;
-
-	for (let s of currentBlock.sites) {
-		if (url.includes(s)) {
-			excluded = false;
-			for (let e of currentBlock.excludes) {
-				if (url.includes(e)) {
-					excluded = true;
-					break;
-				}
-			}
-			if (!excluded) {
-				// console.log("should be blocked!");
-				blockTab(tabID);
-				return;
-			}
+	for (const e of currentBlock.excludes) {
+		if (url.includes(e)) {
+			// should not block
+			return;
 		}
 	}
-	// console.log("shouldn't block!");
+
+	for (const s of currentBlock.sites) {
+		if (url.includes(s)) {
+			blockTab(tabID, currentBlock.redirect);
+			return;
+		}
+	}
 	return;
 }
 
@@ -394,10 +388,12 @@ async function getCurrentBlock() {
 }
 
 // Blocks tab at tabId, redirects to the blocked.html page
-function blockTab(tabId) {
-	// chrome.history.addURL()
-	chrome.tabs.update(tabId, {url: "../blocked.html", active: true});
-	// chrome.tabs.goBack(tabID);
+function blockTab(tabId, redirectURL) {
+	if (redirectURL === "" || redirectURL === undefined) {
+		redirectURL = "../blocked.html";
+	}
+
+	chrome.tabs.update(tabId, {url: redirectURL, active: true});
 }
 
 

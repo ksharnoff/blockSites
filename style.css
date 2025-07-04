@@ -87,8 +87,6 @@ input[type=time] {
 }
 
 .container{
-	display: grid;
-	grid-template-columns: auto auto;
 	border: 1px solid var(--foreground);
 	border-radius: 5px;
 	background-color: #1a1a1a;
@@ -98,6 +96,10 @@ input[type=time] {
 	border-radius: 3px;
 	width: 30px;
 }
+.title {
+	margin: 0px; 
+	display: inline-block;
+}
 
 .answer {
 	border-radius: 3px;
@@ -106,4 +108,14 @@ input[type=time] {
 
 a {
 	color: var(--foreground);
+}
+
+select {
+	background-color: var(--offButton);
+	border: 1px solid var(--foreground);
+	border-radius: 5px;
+	color: var(--foreground);
+	font-family: Monaco, monospace;
+	font-size: 14px;
+	text-align: center;
 }

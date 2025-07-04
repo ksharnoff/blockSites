@@ -46,6 +46,10 @@ window.addEventListener("load", function() {
 			swapClicked(blockAllButton, true);
 		});
 
+		if (value !== null && value.redirect !== undefined) {
+			document.getElementById("redirectURL").value = value.redirect;
+		}
+
 		if (value == null || value.groups === undefined || value.groups.length < 1) {
 			drawGroup(1, null);
 			allGroupsDiv.dataset.groupCount = 1;
@@ -71,7 +75,6 @@ function hideLoadingMessage() {
 let saveButton = document.getElementById("save");
 saveButton.addEventListener("click", save);
 function save() {
-	console.log("SAVED!")
 
 	// get total group count
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
@@ -95,10 +98,17 @@ function save() {
 		blockAll = true;
 	}
 
+	let redirectURLInput = document.getElementById("redirectURL");
+	let redirectURL = redirectURLInput.value;
+	redirectURL = addHTTPS(redirectURL)
+	redirectURL = validRedirect(redirectURL, groupsList);
+
+
 	// create config object: list of groups and blockAll
 	const config = {
 		groups: groupsList,
-		blockAll: blockAll
+		blockAll: blockAll,
+		redirect: redirectURL
 	}
 
 	chrome.storage.local.set({
@@ -114,19 +124,77 @@ function save() {
 	});
 }
 
+// Input redirect url the string and groups, the object list of groups
+// Returns "" if the url would block one of the websites in the list of groups
+// and the inputted url otherwise
+function validRedirect(url, groups) {
+	if (url === "") {
+		return url;
+	}
+
+	// iterate through all groups
+	for (const g of groups) {
+		for (const s of g.sites) {
+			if (url.includes(s)) {
+				return "";
+			}
+		}
+	}
+	return url;
+}
+
+// Inputs string URL for the redirect link
+// Returns the string with https:// prepended if it did not already have it
+function addHTTPS(url) {
+	url = url.trim();
+	if (!(checkHTTPS(url))) {
+		url = "https://" + url
+	}
+	try {
+		new URL(url);
+	} catch {
+		return "";
+	}
+	return url;
+}
+
+// Inputs a string that is the redirect link
+// Returns true if the string begins with https:// or http://, false otherwise
+function checkHTTPS(url) {
+	if (url.length < 7) {
+		return false;
+	}
+	if (url.charAt(0) === 'h' && url.charAt(1) === 't' && url.charAt(2) === 't' && url.charAt(3) === 'p') {
+		let offset = 4;
+
+		// if https:// then need to have a string length 8
+		if (url.charAt(4) === 's') {
+			if (url.length < 8) {
+				return false;
+			}
+			offset++;
+		}
+		if (url.charAt(offset) === ':' && url.charAt(offset+1) === '/' && url.charAt(offset+2) === '/') {
+			return true;
+		}
+
+	}
+	return false;
+}
+
 // Sets a timer specified by waitTime and once it has passed that time without
 // being called again, the callback is run. This is used to save the inputs 
 // 500ms after the last click or key press
 // This debounce function and the related listeners are from
 // https://stackoverflow.com/a/75988895
 const debounce = (callback, waitTime) => {
-  let timeoutId = null;
-  return (...args) => {
-    window.clearTimeout(timeoutId);
-    timeoutId = window.setTimeout(() => {
-      callback(...args);
-    }, waitTime);
-  };
+	let timeoutId = null;
+	return (...args) => {
+		window.clearTimeout(timeoutId);
+		timeoutId = window.setTimeout(() => {
+			callback(...args);
+		}, waitTime);
+	};
 }
 const saveAfterWait = debounce((event) => {
 	save()
@@ -440,7 +508,7 @@ function drawGroup(groupNum, group) {
 	// columns
 	let groupDiv = document.createElement("div");
 	let thirdsDiv = document.createElement("div");
-	thirdsDiv.className = "container";
+	thirdsDiv.className = "twoColumns container";
 
 	// divs for each column
 	let leftGroupDiv = document.createElement("div");
