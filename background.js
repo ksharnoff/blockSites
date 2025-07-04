@@ -10,7 +10,26 @@
 	blockAll, pause).
 */
 
-import { getConfig } from "./sharedFunctions.js";
+import { getConfig, dateToMinutes } from "./sharedFunctions.js";
+
+/*
+There are two objects in storage: config and currentBlock
+
+config has the following:
+	- blockAll: boolean
+	- blockAllUntil: milliseconds since the epoch
+	- groups: array of group objects, specified in settings.js. Each group has:
+		name: string
+		active: boolean
+		sites: string array of sites to block
+		excludes: string array of sites to exclude from blocking
+		times: int 2-arrays array of times to block
+		days: 7-array of booleans of what days to block
+
+currentBlock:
+	- sites: string array of sites to block
+	- exclude: string array of sites to exclude from blocking
+*/
 
 // Upon initial installation or updating: 
 chrome.runtime.onInstalled.addListener(function(details) {
@@ -120,14 +139,18 @@ function calculateBlock(config) {
 	console.log("config:");
 	console.log(config);
 
+	const today = new Date();
+	const day = today.getDay(); // Sunday is 0, Saturday is 6
+	const nowMinutes = dateToMinutes(today);
+
 	// array of websites to be written to storage to be blocked
 	let sitesBlock = new Map();
 	// array of websites to be excluded from blocking
 	let sitesExclude = new Map();
 
-	// if later want to change that blockAll will only block all in that day then double check this!! 
 	if (config.blockAll) {
 		for (let g of config.groups) {
+			// if later want to change that blockAll will only block all in that day then double check this!! 
 			if (!g.active) {
 				continue;
 			}
@@ -135,16 +158,25 @@ function calculateBlock(config) {
 			sitesBlock = arrayAddToMap(sitesBlock, g.sites);
 			sitesExclude = arrayAddToMap(sitesExclude, g.excludes);
 		}
-		// alarm for midnight!
-		// (if they change settings or blockAll button, new alarm will go off then)
-		createErrorAlarm(-1);
+		// THIS IS CURRENTLY BROKEN AND THIS MATH ISNT RUNNING
+		// TO DO TO DO TO DO
+		if (config.blockAllUntil !== undefined && config.blockAllUntil !== null) {
+			const alarmTime = todayCompareDate(today, config.blockAllUntil);
+
+			if (alarmTime === 0) {
+				config.blockAllUntil = null;
+				config.blockAll = false;
+				chrome.storage.local.set({
+					config: config
+				});
+			}
+			createErrorAlarm(alarmTime);
+		} else {
+			createErrorAlarm(-1);
+		}
 		writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
 		return;
 	}
-
-	const today = new Date();
-	const day = today.getDay(); // Sunday is 0, Saturday is 6
-	const nowMinutes = dateToMinutes(today);
 
 	// firstFinish is the first time that any of the websites currently 
 	// blocking will expire being blocked, and when the alarm to 
@@ -193,6 +225,30 @@ function calculateBlock(config) {
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
 	writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
+}
+
+// Inputs today's date and when the blockAllSites will expire (both in 
+// milliseconds) and then outputs -1 if it does not expire today, 0 if it 
+// already expired, or the number of minutes until it expires today.
+function todayCompareDate(today, date) {
+	const diff = date-today;
+
+	// already expired
+	if (diff < 0) {
+		return 0;
+	}
+
+	// will not expire today
+	if (diff > 1000*60*60*24) {
+		return -1;
+	}
+
+	let toReturn = Math.floor((diff/1000)/60);
+
+	console.log(diff)
+	console.log(toReturn);
+
+	return toReturn;
 }
 
 // Adds all values of the inputted array to the inputted map. This is useful
@@ -295,15 +351,6 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 }
 
 
-// Inputs a date, returns how many minutes it has been until that date's time
-// of day. 
-// Example: 11pm --> 1380
-// Example: 12:05am --> 5
-function dateToMinutes(date) {
-	return date.getMinutes() + (date.getHours() * 60);
-}
-
-
 // Logic about blocking currently changing tabs: 
 
 
@@ -312,9 +359,6 @@ function dateToMinutes(date) {
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 
 	console.log("tab updated " + tab.url);
-	// // console.log(tab);
-	// console.log("change info:");
-	// console.log(changeInfo);
 
 	// if the change of the tab is that it has been unloaded from memory
 	// or that it is currently loading don't do anything! another event

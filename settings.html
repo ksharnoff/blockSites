@@ -18,9 +18,9 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "width: 97%;">
-		<div class = ".twoColumns" style = "right: 1%; position: fixed;">
-			<button id = "save" style = "display: inline-block; margin-right: 1px; text-align: center;" data-groupcount = "0" class = "unselected" >  save </button>
-			<button id = "helpButton" style = "display: inline-block; margin-left: 1px; text-align: center; " class = "unselected"> help! </button>
+		<div class = "twoColumns" style = "right: 1%; position: fixed;">
+			<button id = "save" style = "display: inline-block; margin-right: 2px; text-align: center;" data-groupcount = "0" >  save </button>
+			<button id = "helpButton" style = "display: inline-block; margin-left: 2px; text-align: center; "> help! </button>
 		</div>
 
 		<img src = "icon.png" class = "logo" 
@@ -30,23 +30,37 @@
 		<br>
 
 		<div class = "container">
-			<p style = "display: inline-block; margin-right: 0px;"> block all sites: </p>
-			<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
+			<div class = "twoColumns">
+			<div>
+				<p style = "display: inline-block; margin-right: 0px;"> block all sites: </p>
+				<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
+				<br>
+				<p style = "display: inline-block; margin-right: 0px;"> allow pausing: </p>
+				<button style = "display: inline-block; margin: 0px;" class = "selected" id = "blockPausing"> on </button>
+			</div>
 
+			<!-- 
+				2025-07-03
+				string
+				20:56
+				string
+			 -->
+
+			<div>
+				<button class = "unselected" id = "blockAllUntilButton" style = "margin-right: 0px;"> off </button>
+				<p style = "display: inline-block; margin: 0px;"> block all sites until: </p>
+				<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockAllUntilDate">
+				<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockAllUntilTime">
+				<br>
+				<!-- auto fill to tomorrow at same time -->
+				<button class = "unselected" id = "blockSettingsButton" style = "margin-right: 0px;"> off </button>
+				<p style = "display: inline-block; margin: 0px;"> (danger) block settings changes until: </p>
+				<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockSettingsDate">
+				<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockSettingsTime">
+			</div>
+			</div>
 			<p style = "display: inline-block; margin-right: 0px;"> (optional) redirect to URL: </p>
-			<input style = "display: inline-block; width: 370px; margin: 0px;" type = "text" id = "redirectURL" placeholder = "default: chrome extension blocked page">
-			<br>
-
-			<p style = "display: inline-block; margin-right: 0px;"> allow pausing: </p>
-			<button style = "display: inline-block; margin: 0px;" class = "selected" id = "blockPausing"> on </button>
-
-			<!-- auto fill to tomorrow at same time -->
-			<p style = "display: inline-block; margin-right: 0px;"> block any settings changes until: </p>
-			<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockSettingsDate">
-			<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockSettingsTime">
-			<!-- <p style = "display: inline-block; margin-right: 0px;"> block any settings changes for: </p>
-			<input style = "display: inline-block; width: 40px; margin: 0px;" type = "text" id = "blockSettings">
-			<p style = "display: inline-block; margin-left: 0px;"> minutes </p> -->
+			<input style = "display: inline-block; width: 370px; margin: 0px;" type = "text" id = "redirectURL" placeholder = "https://example.com">
 		</div>
 
 		<br>

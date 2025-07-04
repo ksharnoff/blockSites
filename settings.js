@@ -8,7 +8,7 @@
 	from storage and saving changes.
 */
 	
-import { getConfig, swapClicked, isButtonOn } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -19,37 +19,53 @@ document.getElementById("helpButton").addEventListener("click", function() {
 let allGroupsDiv = document.getElementById("allGroupsDiv");
 
 // Once the page loads, get config from storage and fill in the groups with the
-// data, or if config is null then make some empty groups to fill in. Also set
-// up the blockAll button to be correctly selected or not. 
+// data, or if config is null then make some empty groups to fill in. 
 window.addEventListener("load", function() {
 	getConfig()
 	.then(function(value) {
 		console.log("loaded config!");
 		console.log(value);
 
-		let blockAllButton = document.getElementById("blockAll");
 
-		// if nothing stored for blockAll previously
-		if (value === null || value.blockAll === undefined) {
-			blockAllButton.className = "unselected";
-			blockAllButton.innerHTML = "off";
-		} else {
+		// block all button
+		let blockAllButton = document.getElementById("blockAll");
+		buttonOff(blockAllButton, true);
+
+		if (value !== null || value.blockAll !== undefined) {
 			if (value.blockAll) {
-				blockAllButton.className = "selected";
-				blockAllButton.innerHTML = "on";
-			} else {
-				blockAllButton.className = "unselected";
-				blockAllButton.innerHTML = "off";
-			}
+				buttonOn(blockAllButton, true);
+			} 
 		}
 		blockAllButton.addEventListener("click", function() {
 			swapClicked(blockAllButton, true);
 		});
 
+
+		// block all sites until time
+		let blockAllUntilButton = document.getElementById("blockAllUntilButton");
+		buttonOff(blockAllUntilButton, true)
+
+		let dateToSet = dateTomorrow();
+		if (value !== null && value.blockAllUntil !== undefined && value.blockAllUntil !== null) {
+			dateToSet = miliToDateTimeInput(value.blockAllUntil)
+		}
+		let blockAllUntilDate = document.getElementById("blockAllUntilDate");
+		blockAllUntilDate.value = dateToSet[0];
+
+		let blockAllUntilTime = document.getElementById("blockAllUntilTime");
+		blockAllUntilTime.value = dateToSet[1];
+
+		blockAllUntilButton.addEventListener("click", function() {
+			swapClicked(blockAllUntilButton, true);
+		})
+
+
+		// redirect to different URL
 		if (value !== null && value.redirect !== undefined) {
 			document.getElementById("redirectURL").value = value.redirect;
 		}
 
+		// fill in groups 
 		if (value == null || value.groups === undefined || value.groups.length < 1) {
 			drawGroup(1, null);
 			allGroupsDiv.dataset.groupCount = 1;
@@ -75,7 +91,6 @@ function hideLoadingMessage() {
 let saveButton = document.getElementById("save");
 saveButton.addEventListener("click", save);
 function save() {
-
 	// get total group count
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
 	if (isNaN(newGroupCount)) {
@@ -94,10 +109,21 @@ function save() {
 	// figure it blockAll is on
 	let blockAll = false;
 	let blockAllButton = document.getElementById("blockAll");
-	if (blockAllButton.className === "selected") {
+	if (isButtonOn(blockAllButton)) {
 		blockAll = true;
 	}
 
+	//  get blockAllSitesUntil
+	let blockAllUntilButton = document.getElementById("blockAllUntilButton");
+	let blockAllUntil = null;
+	if (isButtonOn(blockAllUntilButton)) {
+		const date = document.getElementById("blockAllUntilDate").value;
+		const time = document.getElementById("blockAllUntilTime").value;
+		blockAllUntil = dateTimeInputToMili([date, time]);
+		blockAll = true;
+	}
+
+	// get redirect URL
 	let redirectURLInput = document.getElementById("redirectURL");
 	let redirectURL = redirectURLInput.value;
 	redirectURL = addHTTPS(redirectURL)
@@ -108,8 +134,11 @@ function save() {
 	const config = {
 		groups: groupsList,
 		blockAll: blockAll,
+		blockAllUntil: blockAllUntil,
 		redirect: redirectURL
 	}
+
+	console.log(config);
 
 	chrome.storage.local.set({
 		config: config
@@ -415,9 +444,9 @@ function Group(name, active, sites, excludes, times, days) {
 	this.days = days;
 }
 
-// Inputs a two length int array (how time is stored in config) that represent
-// the time after midnight in minutes. Returns a two length array that has 
-// those same times translated to be strings in hours:minutes in
+// Inputs an array of ints (how time is stored in config) that represent
+// the time after midnight in minutes. Returns an array that has 
+// those same times translated to be strings in "hh:mm" in
 // 24 hour time, in order to be displayed in the time input. Any invalid times
 // will be returned as empty strings. 
 // Example: [5, 613] --> ["00:05", "10:13"]
@@ -449,9 +478,9 @@ function minutesToTime(minutes) {
 	return minutes;
 }
 
-// Inputs a two length string array (how time is inputted on settings page)
-// that represents the time in 24 hour time in the form "hh:mm". Returns a
-// 2-array with those time values as ints as minutes after midnight. Any 
+// Inputs a string array (how time is inputted on settings page)
+// that represents the time in 24 hour time in the form "hh:mm". Returns an
+// array with those time values as ints as minutes after midnight. Any 
 // invalid times will be returned as -1. 
 // example: ["00:13", "11:59"] --> [13, 1439]
 function timeToMinutes(time) {
@@ -476,6 +505,68 @@ function timeToMinutes(time) {
 	}
 
 	return time;
+}
+
+// Returns a 2-array string of the date and time in ~24 hours. The first string 
+// is the date in the format of "yyyy-mm-dd", the second is the time in the 
+// format of "hh:mm". 
+function dateTomorrow() {
+	// using milliseconds to deal with some possible time issues
+	let tomorrow = Date.now() + 1000*60*60*24 + 1000*60*10;
+
+	return miliToDateTimeInput(tomorrow);
+}
+// Inputs a date in milliseconds and then returns a 2-array string of the date
+// and time. The first string is the date in the format of "yyyy-mm-dd", the 
+// second is the time in the format of "hh:mm". 
+function miliToDateTimeInput(dateMili) {
+	let date = new Date();
+	date.setTime(dateMili);
+
+	const calendar = "" + date.getFullYear() + "-" + doubleDigits((date.getMonth()+1)) + "-" + doubleDigits(date.getDate());
+
+	const time = "" + doubleDigits(date.getHours()) + ":" + doubleDigits(date.getMinutes());
+
+	return [calendar, time];
+}
+// Helper function for dateTomorrow(), input a number and return that same 
+// number with a 0 prepended if necessary to make it two digits. 
+function doubleDigits(num) {
+	if (num < 10) {
+		return "0" + num;
+	}
+	return num
+}
+// Inputs the formatted date and time for those input elements, returns them as
+// milliseconds after the epoch for storage. 
+function dateTimeInputToMili(dateTime) {
+	if (dateTime.length < 2) {
+		return null;
+	}
+	const date = dateTime[0];
+
+	const year = parseInt(date);
+	const monthIndex = parseInt(date.substring(5)) - 1;
+	const day = parseInt(date.substring(8))
+
+	if (isNaN(year) || isNaN(monthIndex) || isNaN(day)) {
+		return null;
+	} else if (year < 0 || monthIndex < 0 || day <= 0) {
+		return null;
+	}
+
+	const time = dateTime[1];
+
+	let hours = parseInt(time);
+	let minutes = parseInt(time.substring(3));
+
+	if (isNaN(hours) || isNaN(minutes) || hours < 0 || minutes < 0) {
+		hours = 0;
+		minutes = 0;
+	}
+
+	let newDate = new Date(year, monthIndex, day, hours, minutes)
+	return newDate.getTime()
 }
 
 // Once more groups button is pressed, calculate the groupNum of the new group
@@ -662,7 +753,6 @@ function moreInputsButton(type, buttonText, groupNum) {
 	let moreButton = document.createElement("button");
 	moreButton.style.cssText = "display: block;";
 	moreButton.innerHTML = buttonText;
-	moreButton.className = "unselected";
 
 	moreButton.addEventListener("click", function() {
 		drawMoreInputs(type, groupNum);
@@ -772,12 +862,9 @@ function buttonElement(text, groupNum, clickedButton, activeButton) {
 
 	// setup initial color and text
 	if (clickedButton) {
-		newButton.className = "selected";
+		buttonOn(newButton, activeButton);
 	} else {
-		newButton.className = "unselected";
-		if (activeButton) {
-			newButton.innerHTML = "off";
-		}
+		buttonOff(newButton, activeButton);
 	}
 
 	newButton.addEventListener("click", function() {
@@ -830,7 +917,6 @@ function timeInputElement(type, value, groupNum, pairNum) {
 function deleteElementButton(element, div, text) {
 	let newButton = document.createElement("button");
 	newButton.innerHTML = text;
-	newButton.className = "unselected";
 
 	newButton.addEventListener('click', function() {
 		div.removeChild(element);

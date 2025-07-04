@@ -33,6 +33,14 @@ button {
 	font-family: Monaco, monospace;
 	margin: 5px;
 	border-radius: 5px;
+	background-color: var(--offButton);
+	color: var(--foreground);
+}
+
+button:hover {
+	background-color: var(--foreground);
+	color: var(--offButton);
+	cursor: pointer;
 }
 
 .unselected {

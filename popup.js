@@ -10,7 +10,7 @@
 */
 
 
-import { getConfig, swapClicked, isButtonOn } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, dateToMinutes, buttonOn, buttonOff } from "./sharedFunctions.js";
 
 
 // Creates new tab of settings.html
@@ -46,19 +46,11 @@ window.addEventListener("load", function() {
 	getConfig()
 	.then(function (value) {
 		let blockAllButton = document.getElementById("blockAll");
-
-		// if no blockAll was previously stored
-		if (value === null || value.blockAll === undefined) {
-			blockAllButton.className = "unselected";
-			blockAllButton.innerHTML = "off";
-		} else {
+		buttonOff(blockAllButton, true);
+		if (value !== null || value.blockAll !== undefined) {
 			if (value.blockAll) {
-				blockAllButton.className = "selected";
-				blockAllButton.innerHTML = "on";
-			} else {
-				blockAllButton.className = "unselected";
-				blockAllButton.innerHTML = "off";
-			}
+				buttonOn(blockAllButton, true);
+			} 
 		}
 
 		blockAllButton.addEventListener("click", function() {
