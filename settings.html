@@ -36,15 +36,8 @@
 				<button class = "unselected" style = "margin-left: 0px;" id = "blockAll"> off </button>
 				<br>
 				<p style = "display: inline-block; margin-right: 0px;"> allow pausing: </p>
-				<button style = "display: inline-block; margin: 0px;" class = "selected" id = "blockPausing"> on </button>
+				<button style = "display: inline-block; margin: 0px;" class = "selected" id = "pauseButton"> on </button>
 			</div>
-
-			<!-- 
-				2025-07-03
-				string
-				20:56
-				string
-			 -->
 
 			<div>
 				<button class = "unselected" id = "blockAllUntilButton" style = "margin-right: 0px;"> off </button>
@@ -52,15 +45,10 @@
 				<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockAllUntilDate">
 				<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockAllUntilTime">
 				<br>
-				<!-- auto fill to tomorrow at same time -->
-				<button class = "unselected" id = "blockSettingsButton" style = "margin-right: 0px;"> off </button>
-				<p style = "display: inline-block; margin: 0px;"> (danger) block settings changes until: </p>
-				<input style = "display: inline-block; margin: 0px;" type = "date" id = "blockSettingsDate">
-				<input style = "display: inline-block; margin: 0px;" type = "time" id = "blockSettingsTime">
+				<p style = "display: inline-block; margin-right: 0px;"> (optional) redirect to URL: </p>
+				<input style = "display: inline-block; width: 350px; margin: 0px;" type = "text" id = "redirectURL" placeholder = "https://example.com">
 			</div>
 			</div>
-			<p style = "display: inline-block; margin-right: 0px;"> (optional) redirect to URL: </p>
-			<input style = "display: inline-block; width: 370px; margin: 0px;" type = "text" id = "redirectURL" placeholder = "https://example.com">
 		</div>
 
 		<br>

@@ -15,7 +15,7 @@
 // than just the small text changing. 
 // Used in popup.js and settings.js. 
 export function swapClicked(button, activeButton) {
-	if (button.className == "selected") {
+	if (isButtonOn(button)) {
 		buttonOff(button, activeButton);
 	} else {
 		buttonOn(button, activeButton);

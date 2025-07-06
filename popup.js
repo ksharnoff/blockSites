@@ -45,9 +45,18 @@ async function sendMessageToBackground(message) {
 window.addEventListener("load", function() {
 	getConfig()
 	.then(function (value) {
+
+		// figure out if allowed to pause
+		if (value != null && value.pause !== undefined) {
+			if (!(value.pause)) {
+				document.getElementById("pauseDiv").remove();
+			}
+		}
+
+		// Set up blockAll button
 		let blockAllButton = document.getElementById("blockAll");
 		buttonOff(blockAllButton, true);
-		if (value !== null || value.blockAll !== undefined) {
+		if (value !== null && value.blockAll !== undefined) {
 			if (value.blockAll) {
 				buttonOn(blockAllButton, true);
 			} 

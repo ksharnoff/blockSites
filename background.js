@@ -17,7 +17,8 @@ There are two objects in storage: config and currentBlock
 
 config has the following:
 	- blockAll: boolean
-	- blockAllUntil: milliseconds since the epoch
+	- pause: boolean
+	- blockAllUntil: milliseconds since the epoch or null
 	- groups: array of group objects, specified in settings.js. Each group has:
 		name: string
 		active: boolean
@@ -158,8 +159,6 @@ function calculateBlock(config) {
 			sitesBlock = arrayAddToMap(sitesBlock, g.sites);
 			sitesExclude = arrayAddToMap(sitesExclude, g.excludes);
 		}
-		// THIS IS CURRENTLY BROKEN AND THIS MATH ISNT RUNNING
-		// TO DO TO DO TO DO
 		if (config.blockAllUntil !== undefined && config.blockAllUntil !== null) {
 			const alarmTime = todayCompareDate(today, config.blockAllUntil);
 
@@ -421,6 +420,24 @@ function validSite(currentBlock, url, tabID) {
 	return;
 }
 
+// Input site stored from config, current URL that is being checked, and the
+// type of site stored (char, domain, regex).
+function checkURLSite(site, url, type) {
+	switch (type) {
+	case "char":
+		if (url.includes(site)) {
+			return true;
+		}
+		return false;
+	case "domain":
+		// domain!!!
+		return false;
+	case "regex":
+		// make regex!!
+		return false;
+	}
+}
+
 // Fetches the stored currentBlock, the sites that should be blocked now until
 // the next alarm goes off. Returns null if failed.
 async function getCurrentBlock() {
@@ -496,10 +513,13 @@ function blockAllSwap(active) {
 	getConfig()
 	.then(function(value) {
 		// if previously was nothing in storage, create blank config
-		if (value == null || value.blockAll == null) {
+		if (value == null) {
 			const config = {
 				groups: [],
-				blockAll: active
+				blockAll: active, 
+				blockAllUntil: null,
+				redirect: "", 
+				pause: false
 			}
 
 			chrome.storage.local.set({

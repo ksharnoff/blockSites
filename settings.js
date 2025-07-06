@@ -7,7 +7,7 @@
 	This is the functionality of the settings page: getting the previous settings
 	from storage and saving changes.
 */
-	
+
 import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
@@ -43,11 +43,12 @@ window.addEventListener("load", function() {
 
 		// block all sites until time
 		let blockAllUntilButton = document.getElementById("blockAllUntilButton");
-		buttonOff(blockAllUntilButton, true)
+		buttonOff(blockAllUntilButton, true);
 
 		let dateToSet = dateTomorrow();
 		if (value !== null && value.blockAllUntil !== undefined && value.blockAllUntil !== null) {
-			dateToSet = miliToDateTimeInput(value.blockAllUntil)
+			dateToSet = miliToDateTimeInput(value.blockAllUntil);
+			buttonOn(blockAllUntilButton, true);
 		}
 		let blockAllUntilDate = document.getElementById("blockAllUntilDate");
 		blockAllUntilDate.value = dateToSet[0];
@@ -57,7 +58,21 @@ window.addEventListener("load", function() {
 
 		blockAllUntilButton.addEventListener("click", function() {
 			swapClicked(blockAllUntilButton, true);
-		})
+		});
+
+
+		// allow pausing button
+		let pauseButton = document.getElementById("pauseButton");
+		buttonOn(pauseButton, true);
+
+		if (value !== null && value.pause !== undefined) {
+			if (!(value.pause)) {
+				buttonOff(pauseButton, true);
+			}
+		}
+		pauseButton.addEventListener("click", function() {
+			swapClicked(pauseButton, true);
+		});
 
 
 		// redirect to different URL
@@ -123,6 +138,13 @@ function save() {
 		blockAll = true;
 	}
 
+	// figure if pausing is allowed
+	let pauseButton = document.getElementById("pauseButton");
+	let pause = false;
+	if (isButtonOn(pauseButton)) {
+		pause = true;
+	}
+
 	// get redirect URL
 	let redirectURLInput = document.getElementById("redirectURL");
 	let redirectURL = redirectURLInput.value;
@@ -135,6 +157,7 @@ function save() {
 		groups: groupsList,
 		blockAll: blockAll,
 		blockAllUntil: blockAllUntil,
+		pause: pause, 
 		redirect: redirectURL
 	}
 
