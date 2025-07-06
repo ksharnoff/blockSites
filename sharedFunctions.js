@@ -67,3 +67,48 @@ export function isButtonOn(element) {
 export function dateToMinutes(date) {
 	return date.getMinutes() + (date.getHours() * 60);
 }
+
+
+// Inputs today's date and when the blockAllUntil or blockSettingsUntil will 
+// expire (in milliseconds) and then outputs -1 if it does not expire today, 
+// 0 if it already expired, or the number of minutes until it expires today.
+// Used in checkBlockSettings and in background.js 
+export function checkDateExpired(date) {
+	const today = new Date();
+	const diff = date-today;
+
+	// already expired
+	if (diff < 0) {
+		return 0;
+	}
+
+	// will not expire today
+	if (diff > 1000*60*60*24) {
+		return -1;
+	}
+
+	let toReturn = Math.floor((diff/1000)/60);
+
+	console.log(diff)
+	console.log(toReturn);
+
+	return toReturn;
+}
+
+// Inputs the config object, returns true if it is blocked, false if not. In
+// addition, if it is passed the time to block until, it will re-write the
+// config and unblock it.
+// Used in popup.js and settings.js
+export function checkBlockedSettings(config) {
+	if (config !== null && config.blockSettings !== undefined && config.blockSettings !== null) {
+		if (checkDateExpired(config.blockSettings) !== 0) {
+			return true;
+		}
+		// therefore, it does equal 0 and should be unblocked! 
+		config.blockSettings = null;
+		chrome.storage.local.set({
+			config: config
+		});
+	}
+	return false;
+}

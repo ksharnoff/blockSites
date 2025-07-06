@@ -10,7 +10,7 @@
 	blockAll, pause).
 */
 
-import { getConfig, dateToMinutes } from "./sharedFunctions.js";
+import { getConfig, dateToMinutes, checkDateExpired } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
@@ -19,6 +19,7 @@ config has the following:
 	- blockAll: boolean
 	- pause: boolean
 	- blockAllUntil: milliseconds since the epoch or null
+	- blockSettings: milliseconds since the epoch or null
 	- groups: array of group objects, specified in settings.js. Each group has:
 		name: string
 		active: boolean
@@ -45,7 +46,11 @@ chrome.runtime.onInstalled.addListener(function(details) {
 			if (value === null) {
 				const config = {
 					groups: [],
-					blockAll: false
+					blockAll: false, 
+					blockAllUntil: null,
+					blockStorage: null,
+					redirect: "", 
+					pause: true
 				}
 
 				chrome.storage.local.set({
@@ -140,10 +145,6 @@ function calculateBlock(config) {
 	console.log("config:");
 	console.log(config);
 
-	const today = new Date();
-	const day = today.getDay(); // Sunday is 0, Saturday is 6
-	const nowMinutes = dateToMinutes(today);
-
 	// array of websites to be written to storage to be blocked
 	let sitesBlock = new Map();
 	// array of websites to be excluded from blocking
@@ -160,7 +161,7 @@ function calculateBlock(config) {
 			sitesExclude = arrayAddToMap(sitesExclude, g.excludes);
 		}
 		if (config.blockAllUntil !== undefined && config.blockAllUntil !== null) {
-			const alarmTime = todayCompareDate(today, config.blockAllUntil);
+			const alarmTime = checkDateExpired(config.blockAllUntil);
 
 			if (alarmTime === 0) {
 				config.blockAllUntil = null;
@@ -176,6 +177,10 @@ function calculateBlock(config) {
 		writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
 		return;
 	}
+
+	const today = new Date();
+	const day = today.getDay(); // Sunday is 0, Saturday is 6
+	const nowMinutes = dateToMinutes(today);
 
 	// firstFinish is the first time that any of the websites currently 
 	// blocking will expire being blocked, and when the alarm to 
@@ -224,30 +229,6 @@ function calculateBlock(config) {
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
 	writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
-}
-
-// Inputs today's date and when the blockAllSites will expire (both in 
-// milliseconds) and then outputs -1 if it does not expire today, 0 if it 
-// already expired, or the number of minutes until it expires today.
-function todayCompareDate(today, date) {
-	const diff = date-today;
-
-	// already expired
-	if (diff < 0) {
-		return 0;
-	}
-
-	// will not expire today
-	if (diff > 1000*60*60*24) {
-		return -1;
-	}
-
-	let toReturn = Math.floor((diff/1000)/60);
-
-	console.log(diff)
-	console.log(toReturn);
-
-	return toReturn;
 }
 
 // Adds all values of the inputted array to the inputted map. This is useful
@@ -518,8 +499,9 @@ function blockAllSwap(active) {
 				groups: [],
 				blockAll: active, 
 				blockAllUntil: null,
+				blockSettings: null,
 				redirect: "", 
-				pause: false
+				pause: true
 			}
 
 			chrome.storage.local.set({

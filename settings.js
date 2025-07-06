@@ -8,7 +8,7 @@
 	from storage and saving changes.
 */
 
-import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -17,6 +17,7 @@ document.getElementById("helpButton").addEventListener("click", function() {
 
 // Div with all the divs of each website group
 let allGroupsDiv = document.getElementById("allGroupsDiv");
+let change = true;
 
 // Once the page loads, get config from storage and fill in the groups with the
 // data, or if config is null then make some empty groups to fill in. 
@@ -26,6 +27,24 @@ window.addEventListener("load", function() {
 		console.log("loaded config!");
 		console.log(value);
 
+		// block all setting changes until time
+		let blockSettingsButton = document.getElementById("blockSettingsButton");
+		buttonOff(blockSettingsButton, true);
+
+		let whenBlockSettings = dateTomorrow();
+		// see if settings are currently blocked, therefore set change = false 
+		// so do not register any changes
+		if (checkBlockedSettings(value)) {
+			whenBlockSettings = miliToDateTimeInput(value.blockSettings);
+			buttonOn(blockSettingsButton, true);
+			change = false;
+			document.getElementById("save").innerHTML = "no settings can be changed";
+		}
+
+		let blockSettingsDate = document.getElementById("blockSettingsDate");
+		blockSettingsDate.value = whenBlockSettings[0];
+		let blockSettingsTime = document.getElementById("blockSettingsTime");
+		blockSettingsTime.value = whenBlockSettings[1];
 
 		// block all button
 		let blockAllButton = document.getElementById("blockAll");
@@ -36,29 +55,20 @@ window.addEventListener("load", function() {
 				buttonOn(blockAllButton, true);
 			} 
 		}
-		blockAllButton.addEventListener("click", function() {
-			swapClicked(blockAllButton, true);
-		});
-
 
 		// block all sites until time
 		let blockAllUntilButton = document.getElementById("blockAllUntilButton");
 		buttonOff(blockAllUntilButton, true);
 
-		let dateToSet = dateTomorrow();
+		let whenBlockAll = dateTomorrow();
 		if (value !== null && value.blockAllUntil !== undefined && value.blockAllUntil !== null) {
-			dateToSet = miliToDateTimeInput(value.blockAllUntil);
+			whenBlockAll = miliToDateTimeInput(value.blockAllUntil);
 			buttonOn(blockAllUntilButton, true);
 		}
 		let blockAllUntilDate = document.getElementById("blockAllUntilDate");
-		blockAllUntilDate.value = dateToSet[0];
-
+		blockAllUntilDate.value = whenBlockAll[0];
 		let blockAllUntilTime = document.getElementById("blockAllUntilTime");
-		blockAllUntilTime.value = dateToSet[1];
-
-		blockAllUntilButton.addEventListener("click", function() {
-			swapClicked(blockAllUntilButton, true);
-		});
+		blockAllUntilTime.value = whenBlockAll[1];
 
 
 		// allow pausing button
@@ -70,14 +80,12 @@ window.addEventListener("load", function() {
 				buttonOff(pauseButton, true);
 			}
 		}
-		pauseButton.addEventListener("click", function() {
-			swapClicked(pauseButton, true);
-		});
 
 
 		// redirect to different URL
+		let redirectURL = document.getElementById("redirectURL");
 		if (value !== null && value.redirect !== undefined) {
-			document.getElementById("redirectURL").value = value.redirect;
+			redirectURL.value = value.redirect;
 		}
 
 		// fill in groups 
@@ -91,20 +99,51 @@ window.addEventListener("load", function() {
 			}
 			allGroupsDiv.dataset.groupCount = numGroups; 
 		}		
-		hideLoadingMessage();
+
+
+		// set up all event listeners only if settings are allowed to be changed
+		if (change) {
+			// settings buttons at the top
+			blockSettingsButton.addEventListener("click", function() {
+				swapClicked(blockSettingsButton, true);				
+			});
+			blockAllButton.addEventListener("click", function() {
+				swapClicked(blockAllButton, true);
+			});
+			blockAllUntilButton.addEventListener("click", function() {
+				swapClicked(blockAllUntilButton, true);
+			});
+			pauseButton.addEventListener("click", function() {
+				swapClicked(pauseButton, true);
+			});
+
+			// saving
+			document.getElementById("save").addEventListener("click", save);
+
+			document.addEventListener("click", saveAfterWait)
+			document.addEventListener("keydown", saveAfterWait)
+			// Save the data once the page is closed
+			window.addEventListener("beforeunload", function() {
+				save();
+			});
+
+			document.getElementById("moreGroups").addEventListener("click", moreGroups)
+		} else {
+			blockSettingsDate.readOnly = true;
+			blockSettingsTime.readOnly = true;
+			blockAllUntilDate.readOnly = true;
+			blockAllUntilTime.readOnly = true;
+			redirectURL.readOnly = true;
+		}
+
+		// Hide loading message that says the page isn't loaded
+		document.getElementById("loadingMessage").style.visibility = "hidden";
 	})
 });
 
-// Upon successful loading, the initial loading message that says the page isn't
-// loaded is hidden. 
-function hideLoadingMessage() {
-	document.getElementById("loadingMessage").style.visibility = "hidden";
-}
 
-// Once the save button is pressed, iterate through all the groups, get all the
-// inputs, make it into Group objects, and save to storage as "config".
-let saveButton = document.getElementById("save");
-saveButton.addEventListener("click", save);
+// Iterate through all the groups, get all the inputs, make it into Group 
+// objects, and save to storage as "config".
 function save() {
 	// get total group count
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
@@ -145,6 +184,15 @@ function save() {
 		pause = true;
 	}
 
+	// get blockSettingsUntil
+	let blockSettings = null;
+	let blockSettingsButton = document.getElementById("blockSettingsButton");
+	if (isButtonOn(blockSettingsButton)) {
+		const date = document.getElementById("blockSettingsDate").value;
+		const time = document.getElementById("blockSettingsTime").value;
+		blockSettings = dateTimeInputToMili([date, time]);
+	}
+
 	// get redirect URL
 	let redirectURLInput = document.getElementById("redirectURL");
 	let redirectURL = redirectURLInput.value;
@@ -157,11 +205,14 @@ function save() {
 		groups: groupsList,
 		blockAll: blockAll,
 		blockAllUntil: blockAllUntil,
+		blockSettings: blockSettings,
 		pause: pause, 
 		redirect: redirectURL
 	}
 
 	console.log(config);
+
+	let saveButton = document.getElementById("save");
 
 	chrome.storage.local.set({
 		config: config
@@ -251,13 +302,6 @@ const debounce = (callback, waitTime) => {
 const saveAfterWait = debounce((event) => {
 	save()
 }, 500);
-document.addEventListener("click", saveAfterWait)
-document.addEventListener("keydown", saveAfterWait)
-
-// Save the data once the page is closed
-window.addEventListener("beforeunload", function(){
-   save();
-});
 
 // The names of the day selection buttons, used to draw the groups and save the
 // inputs later. 
@@ -594,7 +638,7 @@ function dateTimeInputToMili(dateTime) {
 
 // Once more groups button is pressed, calculate the groupNum of the new group
 // and then draw it. 
-document.getElementById("moreGroups").addEventListener("click", function() {
+function moreGroups() {
 	let newGroupCount = parseInt(allGroupsDiv.dataset.groupCount);
 
 	if (isNaN(newGroupCount)) {
@@ -610,7 +654,7 @@ document.getElementById("moreGroups").addEventListener("click", function() {
 
 	drawGroup(newGroupCount, null);
 	allGroupsDiv.dataset.groupCount = newGroupCount;
-});	
+}
 
 // Input a group number and group object (or null) and draw all the input fields
 // and buttons necessary onto the settings page. 
@@ -778,7 +822,9 @@ function moreInputsButton(type, buttonText, groupNum) {
 	moreButton.innerHTML = buttonText;
 
 	moreButton.addEventListener("click", function() {
-		drawMoreInputs(type, groupNum);
+		if (change) {
+			drawMoreInputs(type, groupNum);
+		}
 	});
 	return moreButton;
 }
@@ -855,6 +901,10 @@ function textInput(type, groupNum, value, width) {
 	newInput.dataset.group = groupNum;
 	newInput.value = value;
 
+	if (!(change)) {
+		newInput.readOnly = true;
+	}
+
 	if (type === "site") {
 		newInput.placeholder = "eg: youtube.com";
 	} else if (type === "exclude") {
@@ -891,7 +941,9 @@ function buttonElement(text, groupNum, clickedButton, activeButton) {
 	}
 
 	newButton.addEventListener("click", function() {
-		swapClicked(newButton, activeButton);
+		if (change) {
+			swapClicked(newButton, activeButton);
+		}
 	});
 
 	return newButton;
@@ -931,6 +983,10 @@ function timeInputElement(type, value, groupNum, pairNum) {
 	newTime.dataset.timePair = pairNum;
 	newTime.value = value;
 
+	if (!(change)) {
+		newTime.readOnly = true;
+	}
+
 	return newTime;
 }
 
@@ -942,7 +998,9 @@ function deleteElementButton(element, div, text) {
 	newButton.innerHTML = text;
 
 	newButton.addEventListener('click', function() {
-		div.removeChild(element);
+		if (change) {
+			div.removeChild(element);
+		}
 	});
 
 	return newButton;

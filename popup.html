@@ -20,18 +20,18 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body style = "border-style: solid dashed; border-width: 3px; border-radius: 6px">
-		<img src = "icon.png" class = "logo" style = "display: inline-block;"
-			alt = "green square, the block site browser extension icon">
-
-		<h3 style="margin: 0px; margin-left: 5px; width: 270px;">block site</h3>
+		<img src = "icon.png" class = "logo" alt = "green square, the block site browser extension icon">
+		<h3 style = "display: inline-block; margin: 0px; margin-left: 5px; width: 270px;"> block site </h3>
 
 		<button id = "settings"> open settings </button>
 		<br>
 		<button id = "help"> help! </button>
 		<button id = "recheck"> timezone change / re-check </button>
 
-		<p style = "display: inline-block; margin-right: 0px"> block all sites: </p>
-		<button style = "margin-left: 0px;" id = "blockAll"> off </button>
+		<div id = "blockAllDiv">
+			<p style = "display: inline-block; margin-right: 0px"> block all sites: </p>
+			<button style = "margin-left: 0px;" id = "blockAll"> off </button>
+		</div>
 
 		<div id = "pauseDiv">
 			<button id = "pauseMidnight"> pause until midnight </button>

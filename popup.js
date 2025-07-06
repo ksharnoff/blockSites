@@ -10,7 +10,7 @@
 */
 
 
-import { getConfig, swapClicked, isButtonOn, dateToMinutes, buttonOn, buttonOff } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, dateToMinutes, buttonOn, buttonOff, checkBlockedSettings } from "./sharedFunctions.js";
 
 
 // Creates new tab of settings.html
@@ -47,7 +47,7 @@ window.addEventListener("load", function() {
 	.then(function (value) {
 
 		// figure out if allowed to pause
-		if (value != null && value.pause !== undefined) {
+		if (value !== null && value.pause !== undefined) {
 			if (!(value.pause)) {
 				document.getElementById("pauseDiv").remove();
 			}
@@ -60,6 +60,11 @@ window.addEventListener("load", function() {
 			if (value.blockAll) {
 				buttonOn(blockAllButton, true);
 			} 
+		}
+
+		// if no settings changes allowed
+		if (checkBlockedSettings(value)) {
+			document.getElementById("blockAllDiv").remove();
 		}
 
 		blockAllButton.addEventListener("click", function() {
