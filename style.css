@@ -43,6 +43,10 @@ button:hover {
 	cursor: pointer;
 }
 
+.noHover{
+	pointer-events: none;
+}
+
 .unselected {
 	background-color: var(--offButton);
 	color: var(--foreground);
@@ -126,4 +130,22 @@ select {
 	font-family: Monaco, monospace;
 	font-size: 14px;
 	text-align: center;
+}
+
+.circle {
+	padding: 0px;
+	margin: 0px;
+	height: 15px;
+	width: 15px;
+	background-color: #bbb;
+	border: 1px solid var(--foreground);;
+	border-radius: 50%;
+	display: inline-block;
+
+}
+.greenCircle {
+	background-color: rgb(35, 149, 96);
+}
+.redCircle {
+	background-color: rgb(194, 48, 48);
 }

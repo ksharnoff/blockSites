@@ -10,7 +10,7 @@
 	blockAll, pause).
 */
 
-import { getConfig, dateToMinutes, checkDateExpired } from "./sharedFunctions.js";
+import { getConfig, dateToMinutes, checkDateExpired, checkURLSite } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
@@ -24,7 +24,11 @@ config has the following:
 		name: string
 		active: boolean
 		sites: string array of sites to block
+		// sitesChar
+		// sitesRegex
 		excludes: string array of sites to exclude from blocking
+		// excludesChar
+		// excludesRegex
 		times: int 2-arrays array of times to block
 		days: 7-array of booleans of what days to block
 
@@ -399,24 +403,6 @@ function validSite(currentBlock, url, tabID) {
 		}
 	}
 	return;
-}
-
-// Input site stored from config, current URL that is being checked, and the
-// type of site stored (char, domain, regex).
-function checkURLSite(site, url, type) {
-	switch (type) {
-	case "char":
-		if (url.includes(site)) {
-			return true;
-		}
-		return false;
-	case "domain":
-		// domain!!!
-		return false;
-	case "regex":
-		// make regex!!
-		return false;
-	}
 }
 
 // Fetches the stored currentBlock, the sites that should be blocked now until

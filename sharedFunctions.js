@@ -68,7 +68,6 @@ export function dateToMinutes(date) {
 	return date.getMinutes() + (date.getHours() * 60);
 }
 
-
 // Inputs today's date and when the blockAllUntil or blockSettingsUntil will 
 // expire (in milliseconds) and then outputs -1 if it does not expire today, 
 // 0 if it already expired, or the number of minutes until it expires today.
@@ -112,3 +111,43 @@ export function checkBlockedSettings(config) {
 	}
 	return false;
 }
+
+// Input site stored from config, current URL that is being checked, and the
+// type of site stored (char, domain, regex). If the input type is domain,
+// then the url was prepended with a period. 
+// Used in background.js (to see if site should be blocked) and settings.js
+// (to see if redirect address is valid)
+export function checkURLSite(site, url, type) {
+	switch (type) {
+	case "char":
+		if (url.includes(site)) {
+			return true;
+		}
+		return false;
+	case "domain":
+		if (url.endsWith(site)) {
+			return true;
+		}
+		return false;
+	case "regex":
+		// make regex!!
+		return false;
+	}
+}
+
+
+// when doing comparisons with domains, check if === or if url ends with site
+// str.endsWith("str")
+// str === str
+// think about if should store site with period at the start? and then when doing 
+// comparions with url, add a period to the front of the string? 
+// and then when you write the string to the settings page, delete the period and when 
+// copy from the settings page, write the period so then you don't have to add the period
+// when that site is compared many many times!!
+
+// okay so:
+// domain site saved -- write period at the start in the config and current block
+// when writing domain site saved to the settings page, delete the period at the 
+// start! 
+// add period to the start of the url when doing check URL site comparisons!! bc
+// what if have to compare many of the domain ones!!

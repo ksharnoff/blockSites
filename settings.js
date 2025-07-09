@@ -8,7 +8,7 @@
 	from storage and saving changes.
 */
 
-import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings, checkURLSite } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -196,7 +196,6 @@ function save() {
 	// get redirect URL
 	let redirectURLInput = document.getElementById("redirectURL");
 	let redirectURL = redirectURLInput.value;
-	redirectURL = addHTTPS(redirectURL)
 	redirectURL = validRedirect(redirectURL, groupsList);
 
 
@@ -231,58 +230,40 @@ function save() {
 // Returns "" if the url would block one of the websites in the list of groups
 // and the inputted url otherwise
 function validRedirect(url, groups) {
+	document.getElementById("redirectURLError").innerHTML = "";
+	url = url.trim();
+
 	if (url === "") {
+		document.getElementById("redirectURLCircle").className = "circle greenCircle";
 		return url;
 	}
 
-	// iterate through all groups
+	// check if it has protocol at beginning like https:// or mailto://
+	try {
+		new URL(url);
+	} catch (error) {
+		errorCircle("invalid URL, cannot save");
+
+		return "";
+	}
+
+	// iterate through all groups, to see if there is overlap, which would 
+	// cause a 
 	for (const g of groups) {
 		for (const s of g.sites) {
-			if (url.includes(s)) {
+			if (checkURLSite(s, url, "char")) {
+				errorCircle("overlap with blocked website, cannot save");
 				return "";
 			}
 		}
 	}
+	document.getElementById("redirectURLCircle").className = "circle greenCircle";
 	return url;
 }
 
-// Inputs string URL for the redirect link
-// Returns the string with https:// prepended if it did not already have it
-function addHTTPS(url) {
-	url = url.trim();
-	if (!(checkHTTPS(url))) {
-		url = "https://" + url
-	}
-	try {
-		new URL(url);
-	} catch {
-		return "";
-	}
-	return url;
-}
-
-// Inputs a string that is the redirect link
-// Returns true if the string begins with https:// or http://, false otherwise
-function checkHTTPS(url) {
-	if (url.length < 7) {
-		return false;
-	}
-	if (url.charAt(0) === 'h' && url.charAt(1) === 't' && url.charAt(2) === 't' && url.charAt(3) === 'p') {
-		let offset = 4;
-
-		// if https:// then need to have a string length 8
-		if (url.charAt(4) === 's') {
-			if (url.length < 8) {
-				return false;
-			}
-			offset++;
-		}
-		if (url.charAt(offset) === ':' && url.charAt(offset+1) === '/' && url.charAt(offset+2) === '/') {
-			return true;
-		}
-
-	}
-	return false;
+function errorCircle(error) {
+	document.getElementById("redirectURLCircle").className = "circle redCircle";
+	document.getElementById("redirectURLError").innerHTML = error;
 }
 
 // Sets a timer specified by waitTime and once it has passed that time without
@@ -499,7 +480,11 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 }
 
 // Returns a Group object where name is a string; active is a boolean; sites
-// and excludes are arrays of strings; times is an array of two length arrays,
+// and excludes are arrays of strings for domain matching;
+
+// sitesChar, excludesChar and sitesRegex, excludesRegex
+
+// times is an array of two length arrays,
 // where the first element is start time (in minutes since 12am) and the second
 // element is end time; days is a 7-array of booleans. 
 function Group(name, active, sites, excludes, times, days) {
@@ -886,6 +871,10 @@ function textInputDiv(type, groupNum, value, parentDiv) {
 	div.appendChild(blankLineElement());
 
 	return div;
+}
+
+function matchDropdown(type) {
+
 }
 
 // Returns a new text input element. Type is "site", "exclude", or "name", 
