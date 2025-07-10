@@ -427,8 +427,9 @@ function validSite(currentBlock, url, tabID) {
 	try {
 		let urlObj = new URL(url);
 		periodURL = "." + urlObj.hostname; 
-	} catch(error) {
+	} catch (error) {
 		console.log("tried to get hostname from a real url, but failed");
+		console.log(url);
 	}
 
 	if (currentBlock.excludes !== undefined) {
@@ -446,7 +447,7 @@ function validSite(currentBlock, url, tabID) {
 		}
 	}
 	if (currentBlock.excludesRegex !== undefined) {
-		for (const e of currentBlock.excludesregex) {
+		for (const e of currentBlock.excludesRegex) {
 			if (checkURLSite(e, url, "regex")) {
 				return;
 			}
@@ -470,7 +471,7 @@ function validSite(currentBlock, url, tabID) {
 		}
 	}
 	if (currentBlock.sitesRegex !== undefined) {
-		for (const e of currentBlock.sitesregex) {
+		for (const e of currentBlock.sitesRegex) {
 			if (checkURLSite(e, url, "regex")) {
 				blockTab(tabID, currentBlock.redirect);
 				return;

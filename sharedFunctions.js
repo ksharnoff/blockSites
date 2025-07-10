@@ -114,9 +114,10 @@ export function checkBlockedSettings(config) {
 
 // Input site stored from config, current URL that is being checked, and the
 // type of site stored (char, domain, regex). If the input type is domain,
-// then the url was prepended with a period. 
-// Used in background.js (to see if site should be blocked) and settings.js
-// (to see if redirect address is valid)
+// then 'url' is just the hostname (subdomains.domains.tlds) prepended with
+// a period. 
+// Used in background.js (to see if url should be blocked) and settings.js
+// (to see if redirect address url overlaps with anything that is blocked)
 export function checkURLSite(site, url, type) {
 	switch (type) {
 	case "char":
@@ -130,26 +131,38 @@ export function checkURLSite(site, url, type) {
 		}
 		return false;
 	case "regex":
-		// make regex!!!!!
-		// get the / and the / and then get any flags after the last 
-		// / and then create the regex and run it! 
+		let flags = ""
+		let regex = site; 
+
+		// Javascript regex is supposed to be '/regex/flags'
+		// but they could have done 'regex' with no flags
+		if (site.charAt(0) === "/") {
+			let flagsInd = site.lastIndexOf("/");
+			// if flagsInd is zero then it starts with a / but does not have
+			// a closing one, which is weird
+			if (flagsInd !== 0) {
+				// if there is no flags like '/regex/' this will return the
+				// empty string
+				flags = regex.substring(flagsInd+1);
+
+				// the regex should not include the slashes that surround it
+				regex = regex.substring(1, flagsInd)
+			}
+		}
+
+		try {
+			const re = new RegExp(regex, flags);
+
+			if (url.match(re)) {
+				return true;
+			}
+		} catch (error) {
+			console.log("Error in creating and matching with regex!");
+			console.log(error);
+			return false;
+		}
+
 		return false;
 	}
+	return false;
 }
-
-
-// when doing comparisons with domains, check if === or if url ends with site
-// str.endsWith("str")
-// str === str
-// think about if should store site with period at the start? and then when doing 
-// comparions with url, add a period to the front of the string? 
-// and then when you write the string to the settings page, delete the period and when 
-// copy from the settings page, write the period so then you don't have to add the period
-// when that site is compared many many times!!
-
-// okay so:
-// domain site saved -- write period at the start in the config and current block
-// when writing domain site saved to the settings page, delete the period at the 
-// start! 
-// add period to the start of the url when doing check URL site comparisons!! bc
-// what if have to compare many of the domain ones!!

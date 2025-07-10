@@ -1072,7 +1072,7 @@ function textInputDiv(type, siteNum, matchType, groupNum, value, parentDiv) {
 const placeholderSiteType = {
 	char: "eg: example",
 	domain: "eg: example.com",
-	regex: "eg: /(.*)example\\.com$/ig"
+	regex: "eg: /(.*)example\.com(\/*)$/ig"
 }; 
 
 // Type is exclude or site, siteNum is the count within its list of sites to
