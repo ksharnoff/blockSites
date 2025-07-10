@@ -355,11 +355,12 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 		return;
 	}
 
-	// no need to block if on a page of the chrome extension
-	if (tab.url.substring(0,20) === "chrome-extension://") {
-		console.log("No need to block! You're on the chrome-extension page");
+	// A normal url will start with a protocol, like https://. The chrome 
+	// settings and extensions pages start with chrome. 
+	if (tab.url.startsWith("chrome")) {
+		console.log("No need to block! You're on a chrome page!");
 		return;
-	}
+	} 
 
 	// will check if should be blocked and block if should be
 	checkBlock(tab.url, tabID);

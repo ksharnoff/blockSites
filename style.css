@@ -130,6 +130,7 @@ select {
 	font-family: Monaco, monospace;
 	font-size: 14px;
 	text-align: center;
+	margin: 4px;
 }
 
 .circle {

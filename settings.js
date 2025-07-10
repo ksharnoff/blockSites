@@ -229,36 +229,50 @@ function save() {
 // Input redirect url the string and groups, the object list of groups
 // Returns "" if the url would block one of the websites in the list of groups
 // and the inputted url otherwise
-function validRedirect(url, groups) {
+function validRedirect(urlStr, groups) {
 	document.getElementById("redirectURLError").innerHTML = "";
-	url = url.trim();
+	urlStr = urlStr.trim();
 
-	if (url === "") {
+	if (urlStr === "") {
 		document.getElementById("redirectURLCircle").className = "circle greenCircle";
-		return url;
+		return urlStr;
 	}
 
 	// check if it has protocol at beginning like https:// or mailto://
+	let url; 
 	try {
-		new URL(url);
+		url = new URL(urlStr);
 	} catch (error) {
 		errorCircle("invalid URL, cannot save");
-
+		errorCircle(error);
 		return "";
 	}
 
 	// iterate through all groups, to see if there is overlap, which would 
 	// cause a 
 	for (const g of groups) {
+		let periodURL = "." + url.hostname;
 		for (const s of g.sites) {
-			if (checkURLSite(s, url, "char")) {
+			if (checkURLSite(s, periodURL, "domain")) {
+				errorCircle("overlap with blocked website, cannot save");
+				return "";
+			}
+		}
+		for (const s of g.sitesChar) {
+			if (checkURLSite(s, urlStr, "char")) {
+				errorCircle("overlap with blocked website, cannot save");
+				return "";
+			}
+		}
+		for (const s of g.sitesRegex) {
+			if (checkURLSite(s, urlStr, "regex")) {
 				errorCircle("overlap with blocked website, cannot save");
 				return "";
 			}
 		}
 	}
 	document.getElementById("redirectURLCircle").className = "circle greenCircle";
-	return url;
+	return urlStr;
 }
 
 function errorCircle(error) {
@@ -282,7 +296,7 @@ const debounce = (callback, waitTime) => {
 }
 const saveAfterWait = debounce((event) => {
 	save()
-}, 500);
+}, 750);
 
 // The names of the day selection buttons, used to draw the groups and save the
 // inputs later. 
@@ -306,9 +320,9 @@ function saveGroupFromInputs(groupNum) {
 	let name = "";
 	let active = true;
 	let days = [false, true, true, true, true, true, false];
-	let timeNodes = []; // store time elements, deal with after
-	let sites = [];
-	let excludes = [];
+	let timeNodes = []; // storeX elements, deal with after
+	let siteNodes = [];
+	let excludeNodes = [];
 
 	// bool to track if the group has any content, aside from name
 	let changed = false;
@@ -366,7 +380,7 @@ function saveGroupFromInputs(groupNum) {
 		if (type === "site") {
 			const site = element.value.trim();
 			if (site !== "") {
-				sites.push(site);
+				siteNodes.push(element)
 				changed = true; 
 			}
 			return;
@@ -376,9 +390,13 @@ function saveGroupFromInputs(groupNum) {
 		if (type == "exclude") {
 			const exclude = element.value.trim();
 			if (exclude !== "") {
-				excludes.push(exclude);
+				excludeNodes.push(element);
 				changed = true; 
 			}
+			return;
+		}
+
+		if (type == "selectSiteType") {
 			return;
 		}
 
@@ -388,16 +406,19 @@ function saveGroupFromInputs(groupNum) {
 	});
 
 	// match the start and end times and translate to correct format
-	let times = matchStartEndTimeNodes(timeNodes, groupNum);
+	const times = matchStartEndTimeNodes(timeNodes, groupNum);
 	if (times.length > 0) {
 		changed = true;
 	}
+
+	const sitesObj = matchSiteToType(siteNodes, groupNum, false);
+	const excludesObj = matchSiteToType(excludeNodes, groupNum, true);
 
 	if (!changed) {
 		return null;
 	}
 
-	return new Group(name, active, sites, excludes, times, days);
+	return new Group(name, active, sitesObj, excludesObj, times, days);
 }
 
 // Helper for storing input to groups while saving. Iterates through list of 
@@ -413,6 +434,11 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 	let timeDiv = document.getElementById("timeDiv" + groupNum);
 	let timeCount = timeDiv.dataset.paircount;
 
+	if (isNaN(timeCount)) {
+		console.log("Tried to get pair count for the times to save, it isn't a number");
+		timeCount = 100;
+	}
+
 	// create empty list big enough for all the time pairs
 	let timePairs = [];
 	for (let i = 0; i < timeCount; i++) {
@@ -426,9 +452,9 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 		}
 
 		// get which pair it is out of all the time nodes
-		let index = parseInt(element.dataset.timePair);
+		let index = parseInt(element.dataset.timepair);
 		if (isNaN(index)) {
-			console.log("time pair count not an int");
+			console.log("failed in saving, time pair count not an int");
 			return;
 		}
 		index -= 1;
@@ -456,7 +482,9 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 
 	// iterate through each of the stored times, translate to the correct format,
 	// if no time was saved (left blank), then do not push it to the final time
-	// list. 
+	// list. this also deals with any extra space left from using the 
+	// dataset.timepair which may be bigger than the final number of times,
+	// after possibly deleting some of them. 
 	for (let i = 0; i < timePairs.length; i++) {
 		const timePairArr = timeToMinutes(timePairs[i]);
 
@@ -479,19 +507,71 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 	return finalTimes;
 }
 
-// Returns a Group object where name is a string; active is a boolean; sites
-// and excludes are arrays of strings for domain matching;
+function matchSiteToType(elementList, groupNum, excludes) {
+	let domain = [];
+	let char = [];
+	let regex = [];
 
-// sitesChar, excludesChar and sitesRegex, excludesRegex
+	let middle = "site";
+	if (excludes) {
+		middle = "exclude";
+	}
 
-// times is an array of two length arrays,
-// where the first element is start time (in minutes since 12am) and the second
-// element is end time; days is a 7-array of booleans. 
-function Group(name, active, sites, excludes, times, days) {
+
+	elementList.forEach(function(element) {
+		let siteNum = parseInt(element.dataset.sitenum);
+		if (isNaN(siteNum)) {
+			console.log("Tried to save site but its sitenum wasn't a number");
+			return;
+		}
+		const siteTypeSelect = document.getElementById(groupNum + middle + siteNum);
+		
+		let siteType = "domain";
+		if (siteTypeSelect !== null) {
+			siteType = siteTypeSelect.value;
+		}
+
+		if (siteType === "char") {
+			char.push(element.value);
+		} else if (siteType === "regex") {
+			regex.push(element.value);
+		} else {
+			domain.push(element.value);
+		}
+	});
+
+	if (excludes) {
+		const obj = {
+			excludes: domain,
+			excludesChar: char,
+			excludesRegex: regex,
+		}
+		return obj;
+	}
+
+	const obj = {
+		sites: domain,
+		sitesChar: char,
+		sitesRegex: regex,
+	}
+	return obj;
+}
+
+// Returns a Group object where name is a string; active is a boolean; sitesObj
+// and excludesObj are objects each with three arrays of strings for the three
+// types of site matching: domain, character includes, and regex; times is an
+// array of two length arrays, where the first element is start time (in 
+// minutes since 12am) and the second element is end time; days is a 7-array of 
+// booleans. 
+function Group(name, active, sitesObj, excludesObj, times, days) {
 	this.name = name;
 	this.active = active;
-	this.sites = sites;
-	this.excludes = excludes;
+	this.sites = sitesObj.sites;
+	this.sitesChar = sitesObj.sitesChar;
+	this.sitesRegex = sitesObj.sitesRegex;
+	this.excludes = excludesObj.excludes;
+	this.excludesChar = excludesObj.excludesChar;
+	this.excludesRegex = excludesObj.excludesRegex;
 	this.times = times;
 	this.days = days;
 }
@@ -694,7 +774,7 @@ function drawGroup(groupNum, group) {
 	}
 	leftGroupDiv.appendChild(timeDiv);
 
-	// more times button
+	// more times button 
 	leftGroupDiv.appendChild(moreInputsButton("time", "more times", groupNum));
 	leftGroupDiv.appendChild(blankLineElement());
 
@@ -717,11 +797,12 @@ function drawGroup(groupNum, group) {
 	// inputs for sites
 	let siteDiv = document.createElement("div");
 	siteDiv.id = "siteDiv" + groupNum;
-	let sitesCount = group.sites.length;
+	siteDiv.dataset.sitecount = countSites(group, false);
 
+	let sitesCount = group.sites.length;
 	for (let i = 0; i < sitesCount; i++) {
 		siteDiv.appendChild(
-			textInputDiv("site", groupNum, group.sites[i], siteDiv)
+			textInputDiv("site", i+1, "domain", groupNum, group.sites[i], siteDiv)
 		);
 	}
 	rightGroupDiv.appendChild(siteDiv);
@@ -733,13 +814,15 @@ function drawGroup(groupNum, group) {
 
 	// sites to exclude from blocking
 	rightGroupDiv.appendChild(paragraphElement("sites to exclude from blocking:"));
+
 	let excludeDiv = document.createElement("div");
 	excludeDiv.id = "excludeDiv" + groupNum;
 	let excludeCount = group.excludes.length;
+	excludeDiv.dataset.sitecount = countSites(group, true);
 
 	for (let i = 0; i < excludeCount; i++) {
 		excludeDiv.appendChild(
-			textInputDiv("exclude", groupNum, group.excludes[i], excludeDiv)
+			textInputDiv("exclude", i+1, "domain", groupNum, group.excludes[i], excludeDiv)
 		);
 	} 
 	rightGroupDiv.appendChild(excludeDiv);
@@ -777,10 +860,10 @@ function cleanGroupForDraw(groupNum, group) {
 	if (group.active === undefined) {
 		group.active = true;
 	}
-	if (group.sites === undefined) {
+	if (group.sites === undefined || group.sites.length < 1) {
 		group.sites = ["", ""];
 	} 
-	if (group.excludes == undefined) {
+	if (group.excludes == undefined || group.excludes.length < 1) {
 		group.excludes = [""];
 	}
 
@@ -792,13 +875,44 @@ function cleanGroupForDraw(groupNum, group) {
 		}
 	}
 
-	if (group.days === undefined) {
+	if (group.days === undefined || group.days.length != 7) {
 		group.days = [false, true, true, true, true, true, false];
 	}
 	return group;
 }
 
-// Returns a "more <input>" button to be used for "sits", "exclude", "time"
+// Returns count of all the sites -- sites, sitesChar, sitesRegex or the same
+// but for excludes if excludes is true
+function countSites(group, excludes) {
+	let count = 0;
+
+	if (excludes) {
+		if (group.excludes !== undefined) {
+			count += group.excludes.length;
+		}
+		if (group.excludesChar !== undefined) {
+			count += group.excludesChar.length;
+		}
+		if (group.excludesRegex !== undefined) {
+			count += group.excludesRegex.length;
+		}
+
+		return count;
+	}
+
+	if (group.sites !== undefined) {
+		count += group.sites.length;
+	}
+	if (group.sitesChar !== undefined) {
+		count += group.sitesChar.length;
+	}
+	if (group.sitesRegex !== undefined) {
+		count += group.sitesRegex.length;
+	}
+	return count;
+}
+
+// Returns a "more <input>" button to be used for "site", "exclude", "time"
 // as specified in the type input. The buttonText is "more times" or "more
 // sites"
 function moreInputsButton(type, buttonText, groupNum) {
@@ -817,6 +931,12 @@ function moreInputsButton(type, buttonText, groupNum) {
 // Draws more input spaces to settings page, where type is "sits", "exclude", 
 // or "time". groupNum is needed to find the parent div to append to. 
 function drawMoreInputs(type, groupNum) {
+	if (type !== "time" && type !== "site" && type !== "exclude") {
+		console.log("Failed to make newInput from 'more' button, type not found");
+		console.log(type);
+		return;
+	}
+
 	// The parent div of the rest of the inputs of that type
 	let div = document.getElementById(type + "Div" + groupNum);
 
@@ -847,8 +967,16 @@ function drawMoreInputs(type, groupNum) {
 		return;
 	}
 
+	let newSiteCount = parseInt(div.dataset.sitecount)
+	if (isNaN(newSiteCount)) {
+		console.log("Failed to make newInput from 'more' button, the sitecount is not a number");
+		return;
+	}
+	newSiteCount++;
+
+
 	// otherwise, the type will be site or exclude and a text input is made
-	newInput = textInputDiv(type, groupNum, "", div);
+	newInput = textInputDiv(type, newSiteCount, "domain", groupNum, "", div);
 
 	// if failed to make a new element, return
 	if (newInput == null) {
@@ -856,16 +984,19 @@ function drawMoreInputs(type, groupNum) {
 		return;
 	}
 
+	div.dataset.sitecount = newSiteCount;
 	div.appendChild(newInput);
 }
 
 // Returns a text input div with a text input, delete button, and newline. 
 // It must be in a div so that the delete button will work on the entire
 // thing, including the newline. 
-function textInputDiv(type, groupNum, value, parentDiv) {
+function textInputDiv(type, siteNum, matchType, groupNum, value, parentDiv) {
 	let newInput = textInput(type, groupNum, value, 400)
+	newInput.dataset.sitenum = siteNum;
 
 	let div = document.createElement("div");
+	div.appendChild(matchTypeDropdown(type, siteNum, matchType, groupNum, newInput));
 	div.appendChild(newInput);
 	div.appendChild(deleteElementButton(div, parentDiv, "x"));
 	div.appendChild(blankLineElement());
@@ -873,8 +1004,63 @@ function textInputDiv(type, groupNum, value, parentDiv) {
 	return div;
 }
 
-function matchDropdown(type) {
+const placeholderSiteType = {
+	char: "eg: example",
+	domain: "eg: example.com",
+	regex: "eg: /(.*)example\\.com(/)$/ig"
+}; 
 
+// Type is exclude or site, siteNum is the count within its list of sites to
+// block or exclude within its group, siteType is the method of blocking, 
+// char, domain, or regex, textInput is the input itself which is used to set
+// the placeholder for. 
+function matchTypeDropdown(type, siteNum, siteType, groupNum, textInput) {
+	let select = document.createElement("select");
+	// for example, of group 2, exclude, 4th site: 2exclude4
+	select.dataset.id = "" + groupNum + type + siteNum; 
+
+	let charOption = new Option("has characters:", "char");
+	let domainOption = new Option("domain match:", "domain");
+	let regexOption = new Option("regex match:", "regex");
+
+	if (siteType === "char") {
+		charOption.selected = "selected";
+	} else if (siteType === "regex") {
+		regexOption.selected = "selected";
+	} else {
+		// default is that domain is selected
+		domainOption.selected = "selected";
+	}
+
+	select.options.add(domainOption);
+	select.options.add(charOption);
+	select.options.add(regexOption);
+
+	setSiteTypePlaceholder(siteType, textInput)
+
+	select.addEventListener("change", function() {
+		if (change) {
+			setSiteTypePlaceholder(select.value, textInput);
+		}
+	});
+
+	return select;
+}
+
+// Sets the placeholder text for text input so that it can change as 
+// which dropdown is selected changes. 
+function setSiteTypePlaceholder(type, textInput) {
+	switch (type) {
+	case "char":
+		textInput.placeholder = placeholderSiteType.char;
+		return;
+	case "domain":
+		textInput.placeholder = placeholderSiteType.domain;
+		return;
+	case "regex":
+		textInput.placeholder = placeholderSiteType.regex;
+		return;
+	}
 }
 
 // Returns a new text input element. Type is "site", "exclude", or "name", 
@@ -895,9 +1081,9 @@ function textInput(type, groupNum, value, width) {
 	}
 
 	if (type === "site") {
-		newInput.placeholder = "eg: youtube.com";
+		newInput.placeholder = "eg: example.com";
 	} else if (type === "exclude") {
-		newInput.placeholder = "eg: music.youtube.com";
+		newInput.placeholder = "eg: blog.example.com";
 	} else if (type === "name") {
 		newInput.placeholder = "group " + groupNum;
 	} else {
@@ -969,7 +1155,7 @@ function timeInputElement(type, value, groupNum, pairNum) {
 	newTime.type = "time";
 	newTime.dataset.type = type + "Time";
 	newTime.dataset.group = groupNum;
-	newTime.dataset.timePair = pairNum;
+	newTime.dataset.timepair = pairNum;
 	newTime.value = value;
 
 	if (!(change)) {

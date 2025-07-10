@@ -125,12 +125,14 @@ export function checkURLSite(site, url, type) {
 		}
 		return false;
 	case "domain":
-		if (url.endsWith(site)) {
+		if (url.endsWith("." + site)) {
 			return true;
 		}
 		return false;
 	case "regex":
-		// make regex!!
+		// make regex!!!!!
+		// get the / and the / and then get any flags after the last 
+		// / and then create the regex and run it! 
 		return false;
 	}
 }
