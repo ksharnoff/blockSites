@@ -24,17 +24,21 @@ config has the following:
 		name: string
 		active: boolean
 		sites: string array of sites to block
-		// sitesChar
-		// sitesRegex
+		sitesChar
+		sitesRegex
 		excludes: string array of sites to exclude from blocking
-		// excludesChar
-		// excludesRegex
+		excludesChar
+		excludesRegex
 		times: int 2-arrays array of times to block
 		days: 7-array of booleans of what days to block
 
 currentBlock:
-	- sites: string array of sites to block
-	- exclude: string array of sites to exclude from blocking
+	- (optional) sites: string array of sites to block
+	- (optional) sitesChar
+	- (optional) sitesRegex
+	- (optional) excludes: string array of sites to exclude from blocking
+	- (optional) excludesChar
+	- (optional) excludesRegex
 */
 
 // Upon initial installation or updating: 
@@ -150,9 +154,13 @@ function calculateBlock(config) {
 	console.log(config);
 
 	// array of websites to be written to storage to be blocked
-	let sitesBlock = new Map();
+	let sites = new Map();
+	let sitesChar = new Map();
+	let sitesRegex = new Map();
 	// array of websites to be excluded from blocking
-	let sitesExclude = new Map();
+	let excludes = new Map();
+	let excludesChar = new Map();
+	let excludesRegex = new Map();
 
 	if (config.blockAll) {
 		for (let g of config.groups) {
@@ -161,8 +169,13 @@ function calculateBlock(config) {
 				continue;
 			}
 
-			sitesBlock = arrayAddToMap(sitesBlock, g.sites);
-			sitesExclude = arrayAddToMap(sitesExclude, g.excludes);
+			sites = arrayAddToMap(sites, g.sites);
+			sitesChar = arrayAddToMap(sitesChar, g.sitesChar);
+			sitesRegex = arrayAddToMap(sitesRegex, g.sitesRegex);
+
+			excludes = arrayAddToMap(excludes, g.excludes);
+			excludesChar = arrayAddToMap(excludesChar, g.excludesChar);
+			excludesRegex = arrayAddToMap(excludesRegex, g.excludesRegex);
 		}
 		if (config.blockAllUntil !== undefined && config.blockAllUntil !== null) {
 			const alarmTime = checkDateExpired(config.blockAllUntil);
@@ -178,7 +191,7 @@ function calculateBlock(config) {
 		} else {
 			createErrorAlarm(-1);
 		}
-		writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
+		writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, config.redirect);
 		return;
 	}
 
@@ -214,9 +227,15 @@ function calculateBlock(config) {
 				// because multiple opportunities to add each group
 				// as all of the times are checked
 				if (!addedGroup) {
-					sitesBlock = arrayAddToMap(sitesBlock, g.sites);
-					sitesExclude = arrayAddToMap(sitesExclude, g.excludes);
+					sites = arrayAddToMap(sites, g.sites);
+					sitesChar = arrayAddToMap(sitesChar, g.sitesChar);
+					sitesRegex = arrayAddToMap(sitesRegex, g.sitesRegex);
+					excludes = arrayAddToMap(excludes, g.excludes);
+					excludesChar = arrayAddToMap(excludesChar, g.excludesChar);
+					excludesRegex = arrayAddToMap(excludesRegex, g.excludesRegex);
 					addedGroup = true;
+					// DOES PUTTING A BREAK HERE BREAK THINGS??
+					break;
 				}
 
 				if (time[1] < firstFinish) {
@@ -232,7 +251,7 @@ function calculateBlock(config) {
 
 	}
 	createAlarm(firstFinish, nowMinutes, "updateCurrentBlock");
-	writeCurrentBlock(sitesBlock, sitesExclude, config.redirect);
+	writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, config.redirect);
 }
 
 // Adds all values of the inputted array to the inputted map. This is useful
@@ -250,7 +269,8 @@ function arrayAddToMap(map, arr) {
 
 // Inputs a map and outputs an array made of the keys. Used for changing the map
 // to array in writeCurrentBlock
-function mapToArray(map, arr) {
+function mapToArray(map) {
+	let arr = [];
 	map.forEach(function(value, key, map) {
 		arr.push(key);
 	});
@@ -259,27 +279,40 @@ function mapToArray(map, arr) {
 
 // Inputs the sites to block map and sites to exclude map, then writes them to
 // storage as arrays in the currentBlock. 
-function writeCurrentBlock(sitesBlock, sitesExclude, redirectURL) {
-	let sitesBlockArr = [];
-	let sitesExcludeArr = [];
+function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, redirectURL) {
+	let sitesArr = mapToArray(sites);
+	let sitesCharArr = mapToArray(sitesChar);
+	let sitesRegexArr = mapToArray(sitesRegex);
+	let excludesArr = mapToArray(excludes);
+	let excludesCharArr = mapToArray(excludesChar);
+	let excludesRegexArr = mapToArray(excludesRegex);
 
-	sitesBlockArr = mapToArray(sitesBlock, sitesBlockArr);
-	sitesExcludeArr = mapToArray(sitesExclude, sitesExcludeArr);
+	let currentBlock = {}; 
 
-	console.log("ran write current block");
-	console.log("sites:");
-	console.log(sitesBlockArr);
-	console.log("excludes:");
-	console.log(sitesExcludeArr);
-	console.log("redirect:");
-	console.log(redirectURL);
+	if (sitesArr.length > 0) {
+		currentBlock.sites = sitesArr;
+	}
+	if (sitesCharArr.length > 0) {
+		currentBlock.sitesChar = sitesCharArr;
+	}
+	if (sitesRegexArr.length > 0) {
+		currentBlock.sitesRegex = sitesRegexArr;
+	}
+	if (excludesArr.length > 0) {
+		currentBlock.excludes = excludesArr;
+	}
+	if (excludesCharArr.length > 0) {
+		currentBlock.excludesChar = excludesCharArr;
+	}
+	if (excludesRegexArr.length > 0) {
+		currentBlock.excludesRegex = excludesRegexArr;
+	}
+
+	// console.log("current block!");
+	// console.log(currentBlock);
 
 	chrome.storage.local.set({
-		currentBlock: {
-			"sites": sitesBlockArr, 
-			"excludes": sitesExcludeArr,
-			"redirect": redirectURL
-		}
+		currentBlock: currentBlock
 	});
 	if (chrome.runtime.lastError) {
 	 	console.log("chrome runtime last error exists! failed to write to storage!");
@@ -374,7 +407,7 @@ async function checkBlock(url, tabID) {
 	// console.log("checking if block!");
 	// value is currentBlock
 	getCurrentBlock().then(function(value) {
-		if (value === undefined || value === null || value.sites === undefined)  {
+		if (value === undefined || value === null)  {
 			console.log("Tried to fetch currentBlock from storage for validSite, it is null");
 			return; 
 		}
@@ -390,17 +423,58 @@ async function checkBlock(url, tabID) {
 // Checks if the current url should be blocked according to the fetched
 // currentBlock. Calls blockTab if it should be blocked.
 function validSite(currentBlock, url, tabID) {
-	for (const e of currentBlock.excludes) {
-		if (url.includes(e)) {
-			// should not block
-			return;
+	let periodURL = "." + url;
+	try {
+		let urlObj = new URL(url);
+		periodURL = "." + urlObj.hostname; 
+	} catch(error) {
+		console.log("tried to get hostname from a real url, but failed");
+	}
+
+	if (currentBlock.excludes !== undefined) {
+		for (const e of currentBlock.excludes) {
+			if (checkURLSite(e, periodURL, "domain")) {
+				return;
+			}
+		}
+	}
+	if (currentBlock.excludesChar !== undefined) {
+		for (const e of currentBlock.excludesChar) {
+			if (checkURLSite(e, url, "char")) {
+				return;
+			}
+		}
+	}
+	if (currentBlock.excludesRegex !== undefined) {
+		for (const e of currentBlock.excludesregex) {
+			if (checkURLSite(e, url, "regex")) {
+				return;
+			}
 		}
 	}
 
-	for (const s of currentBlock.sites) {
-		if (url.includes(s)) {
-			blockTab(tabID, currentBlock.redirect);
-			return;
+	if (currentBlock.sites !== undefined) {
+		for (const e of currentBlock.sites) {
+			if (checkURLSite(e, periodURL, "domain")) {
+				blockTab(tabID, currentBlock.redirect);
+				return;
+			}
+		}
+	}
+	if (currentBlock.sitesChar !== undefined) {
+		for (const e of currentBlock.sitesChar) {
+			if (checkURLSite(e, url, "char")) {
+				blockTab(tabID, currentBlock.redirect);
+				return;
+			}
+		}
+	}
+	if (currentBlock.sitesRegex !== undefined) {
+		for (const e of currentBlock.sitesregex) {
+			if (checkURLSite(e, url, "regex")) {
+				blockTab(tabID, currentBlock.redirect);
+				return;
+			}
 		}
 	}
 	return;
@@ -413,6 +487,7 @@ async function getCurrentBlock() {
 	if (result == undefined || result.currentBlock === undefined) {
 		return null;
 	}
+	console.log(result.currentBlock);
 	return result.currentBlock; 
 }
 

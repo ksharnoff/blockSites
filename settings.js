@@ -244,12 +244,11 @@ function validRedirect(urlStr, groups) {
 		url = new URL(urlStr);
 	} catch (error) {
 		errorCircle("invalid URL, cannot save");
-		errorCircle(error);
 		return "";
 	}
 
 	// iterate through all groups, to see if there is overlap, which would 
-	// cause a 
+	// cause a looping problem later
 	for (const g of groups) {
 		let periodURL = "." + url.hostname;
 		for (const s of g.sites) {
@@ -525,11 +524,11 @@ function matchSiteToType(elementList, groupNum, excludes) {
 			return;
 		}
 		const siteTypeSelect = document.getElementById(groupNum + middle + siteNum);
-		
+
 		let siteType = "domain";
 		if (siteTypeSelect !== null) {
 			siteType = siteTypeSelect.value;
-		}
+		} 
 
 		if (siteType === "char") {
 			char.push(element.value);
@@ -701,6 +700,8 @@ function dateTimeInputToMili(dateTime) {
 	return newDate.getTime()
 }
 
+
+
 // Once more groups button is pressed, calculate the groupNum of the new group
 // and then draw it. 
 function moreGroups() {
@@ -799,12 +800,29 @@ function drawGroup(groupNum, group) {
 	siteDiv.id = "siteDiv" + groupNum;
 	siteDiv.dataset.sitecount = countSites(group, false);
 
+	let offset = 1;
+
 	let sitesCount = group.sites.length;
 	for (let i = 0; i < sitesCount; i++) {
 		siteDiv.appendChild(
-			textInputDiv("site", i+1, "domain", groupNum, group.sites[i], siteDiv)
+			textInputDiv("site", i+offset, "domain", groupNum, group.sites[i], siteDiv)
 		);
 	}
+	offset = sitesCount + 1;
+	let sitesCharCount = group.sitesChar.length; 
+	for (let i = 0; i < sitesCharCount; i++) {
+		siteDiv.appendChild(
+			textInputDiv("site", i+offset, "char", groupNum, group.sitesChar[i], siteDiv)
+		);
+	}
+	offset = sitesCount + sitesCharCount + 1; 
+	let sitesRegexCount = group.sitesRegex.length; 
+	for (let i = 0; i < sitesRegexCount; i++) {
+		siteDiv.appendChild(
+			textInputDiv("site", i+offset, "regex", groupNum, group.sitesRegex[i], siteDiv)
+		);
+	}
+
 	rightGroupDiv.appendChild(siteDiv);
 
 	// button for more sites
@@ -820,11 +838,30 @@ function drawGroup(groupNum, group) {
 	let excludeCount = group.excludes.length;
 	excludeDiv.dataset.sitecount = countSites(group, true);
 
-	for (let i = 0; i < excludeCount; i++) {
+	offset = 1;
+
+	let excludesCount = group.excludes.length;
+	for (let i = 0; i < excludesCount; i++) {
 		excludeDiv.appendChild(
-			textInputDiv("exclude", i+1, "domain", groupNum, group.excludes[i], excludeDiv)
+			textInputDiv("exclude", i+offset, "domain", groupNum, group.excludes[i], excludeDiv)
 		);
-	} 
+	}
+	offset = excludesCount + 1;
+	let excludesCharCount = group.excludesChar.length; 
+	for (let i = 0; i < excludesCharCount; i++) {
+		excludeDiv.appendChild(
+			textInputDiv("exclude", i+offset, "char", groupNum, group.excludesChar[i], excludeDiv)
+		);
+	}
+	offset = excludesCount + excludesCharCount + 1; 
+	let excludesRegexCount = group.excludesRegex.length; 
+	for (let i = 0; i < excludesRegexCount; i++) {
+		excludeDiv.appendChild(
+			textInputDiv("exclude", i+offset, "regex", groupNum, group.excludesRegex[i], excludeDiv)
+		);
+	}
+
+
 	rightGroupDiv.appendChild(excludeDiv);
 
 	// button for more excludes
@@ -844,12 +881,24 @@ function drawGroup(groupNum, group) {
 // to make the name
 function cleanGroupForDraw(groupNum, group) {
 	if (group == null) {
+		const excludesObj = {
+			excludes: [""],
+			excludesChar: [],
+			excludesRegex: [],
+		}
+		const sitesObj = {
+			sites: ["", ""], 
+			sitesChar: [],
+			sitesRegex: []
+		}
+
 		group = new Group("group " + groupNum,
 			true, 
-			["", ""], 
-			[""], 
+			sitesObj, 
+			excludesObj, 
 			[["", ""]], 
-			[false, true, true, true, true, true, false])
+			[false, true, true, true, true, true, false]);
+		console.log(group);
 		return group;
 	}
 
@@ -860,11 +909,27 @@ function cleanGroupForDraw(groupNum, group) {
 	if (group.active === undefined) {
 		group.active = true;
 	}
+
+	// Create any lists that may be empty so that we don't have to deal with
+	// checking if it is undefined in the drawGroup() function
 	if (group.sites === undefined || group.sites.length < 1) {
 		group.sites = ["", ""];
-	} 
+	}
+	if (group.sitesChar === undefined) {
+		group.sitesChar = [];
+	}
+	if (group.sitesRegex === undefined) {
+		group.sitesRegex = [];
+	}
+
 	if (group.excludes == undefined || group.excludes.length < 1) {
 		group.excludes = [""];
+	}
+	if (group.excludesChar === undefined) {
+		group.excludesChar = [];
+	}
+	if (group.excludesRegex === undefined) {
+		group.excludesRegex = [];
 	}
 
 	if (group.times === undefined || group.times.length < 1) {
@@ -1007,7 +1072,7 @@ function textInputDiv(type, siteNum, matchType, groupNum, value, parentDiv) {
 const placeholderSiteType = {
 	char: "eg: example",
 	domain: "eg: example.com",
-	regex: "eg: /(.*)example\\.com(/)$/ig"
+	regex: "eg: /(.*)example\\.com$/ig"
 }; 
 
 // Type is exclude or site, siteNum is the count within its list of sites to
@@ -1017,7 +1082,7 @@ const placeholderSiteType = {
 function matchTypeDropdown(type, siteNum, siteType, groupNum, textInput) {
 	let select = document.createElement("select");
 	// for example, of group 2, exclude, 4th site: 2exclude4
-	select.dataset.id = "" + groupNum + type + siteNum; 
+	select.id = "" + groupNum + type + siteNum;
 
 	let charOption = new Option("has characters:", "char");
 	let domainOption = new Option("domain match:", "domain");
