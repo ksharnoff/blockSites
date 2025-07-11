@@ -100,6 +100,11 @@ window.addEventListener("load", function() {
 			allGroupsDiv.dataset.groupCount = numGroups; 
 		}		
 
+		// these buttons have to editing if or if not changes are allowed
+		// (to add a listener on click or to turn off hover color changes)
+		let saveButton = document.getElementById("save");
+		let moreGroupsButton = document.getElementById("moreGroups");
+
 
 		// set up all event listeners only if settings are allowed to be changed
 		if (change) {
@@ -118,7 +123,7 @@ window.addEventListener("load", function() {
 			});
 
 			// saving
-			document.getElementById("save").addEventListener("click", save);
+			saveButton.addEventListener("click", save);
 
 			document.addEventListener("click", saveAfterWait)
 			document.addEventListener("keydown", saveAfterWait)
@@ -127,13 +132,22 @@ window.addEventListener("load", function() {
 				save();
 			});
 
-			document.getElementById("moreGroups").addEventListener("click", moreGroups)
+			moreGroupsButton.addEventListener("click", moreGroups)
 		} else {
-			blockSettingsDate.readOnly = true;
-			blockSettingsTime.readOnly = true;
-			blockAllUntilDate.readOnly = true;
-			blockAllUntilTime.readOnly = true;
-			redirectURL.readOnly = true;
+			// make the inputs unclickable
+			blockSettingsDate.style.pointerEvents = "none";
+			blockSettingsTime.style.pointerEvents = "none";
+			blockAllUntilDate.style.pointerEvents = "none";
+			blockAllUntilTime.style.pointerEvents = "none";
+			redirectURL.style.pointerEvents = "none";
+
+			// make the button un editable
+			blockSettingsButton.classList.add("disabled");
+			blockAllButton.classList.add("disabled");
+			blockAllUntilButton.classList.add("disabled");
+			pauseButton.classList.add("disabled");
+			saveButton.className = "disabled";
+			moreGroupsButton.classList.add("disabled");
 		}
 
 		// Hide loading message that says the page isn't loaded
@@ -912,7 +926,7 @@ function cleanGroupForDraw(groupNum, group) {
 
 	// Create any lists that may be empty so that we don't have to deal with
 	// checking if it is undefined in the drawGroup() function
-	if (group.sites === undefined || group.sites.length < 1) {
+	if (group.sites === undefined || countSites(group, false) < 1) {
 		group.sites = ["", ""];
 	}
 	if (group.sitesChar === undefined) {
@@ -922,7 +936,7 @@ function cleanGroupForDraw(groupNum, group) {
 		group.sitesRegex = [];
 	}
 
-	if (group.excludes == undefined || group.excludes.length < 1) {
+	if (group.excludes == undefined || countSites(group, true) < 1) {
 		group.excludes = [""];
 	}
 	if (group.excludesChar === undefined) {
@@ -985,11 +999,14 @@ function moreInputsButton(type, buttonText, groupNum) {
 	moreButton.style.cssText = "display: block;";
 	moreButton.innerHTML = buttonText;
 
-	moreButton.addEventListener("click", function() {
-		if (change) {
+	if (change) {
+		moreButton.addEventListener("click", function() {
 			drawMoreInputs(type, groupNum);
-		}
-	});
+		});
+	} else {
+		moreButton.className = "disabled";
+	}
+
 	return moreButton;
 }
 
@@ -1072,7 +1089,7 @@ function textInputDiv(type, siteNum, matchType, groupNum, value, parentDiv) {
 const placeholderSiteType = {
 	char: "eg: example",
 	domain: "eg: example.com",
-	regex: "eg: /(.*)example\.com(\/*)$/ig"
+	regex: "eg: /(.*)example\\.com(\/*)$/ig"
 }; 
 
 // Type is exclude or site, siteNum is the count within its list of sites to
@@ -1103,11 +1120,15 @@ function matchTypeDropdown(type, siteNum, siteType, groupNum, textInput) {
 
 	setSiteTypePlaceholder(siteType, textInput)
 
-	select.addEventListener("change", function() {
-		if (change) {
+	if (!(change)) {
+		select.style.pointerEvents = "none";
+	}
+
+	if (change) {
+		select.addEventListener("change", function() {
 			setSiteTypePlaceholder(select.value, textInput);
-		}
-	});
+		});
+	}
 
 	return select;
 }
@@ -1142,7 +1163,7 @@ function textInput(type, groupNum, value, width) {
 	newInput.value = value;
 
 	if (!(change)) {
-		newInput.readOnly = true;
+		newInput.style.pointerEvents = "none";
 	}
 
 	if (type === "site") {
@@ -1180,11 +1201,13 @@ function buttonElement(text, groupNum, clickedButton, activeButton) {
 		buttonOff(newButton, activeButton);
 	}
 
-	newButton.addEventListener("click", function() {
-		if (change) {
+	if (change) {
+		newButton.addEventListener("click", function() {
 			swapClicked(newButton, activeButton);
-		}
-	});
+		});
+	} else {
+		newButton.classList.add("disabled");
+	}
 
 	return newButton;
 }
@@ -1224,7 +1247,7 @@ function timeInputElement(type, value, groupNum, pairNum) {
 	newTime.value = value;
 
 	if (!(change)) {
-		newTime.readOnly = true;
+		newTime.style.pointerEvents = "none";
 	}
 
 	return newTime;
@@ -1237,11 +1260,13 @@ function deleteElementButton(element, div, text) {
 	let newButton = document.createElement("button");
 	newButton.innerHTML = text;
 
-	newButton.addEventListener('click', function() {
-		if (change) {
+	if (change) {
+		newButton.addEventListener('click', function() {
 			div.removeChild(element);
-		}
-	});
+		});
+	} else {
+		newButton.className = "disabled";
+	}
 
 	return newButton;
 }
