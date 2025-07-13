@@ -271,6 +271,11 @@ function arrayAddToMap(map, arr) {
 // to array in writeCurrentBlock
 function mapToArray(map) {
 	let arr = [];
+
+	if (map === undefined) {
+		return arr;
+	}
+
 	map.forEach(function(value, key, map) {
 		arr.push(key);
 	});

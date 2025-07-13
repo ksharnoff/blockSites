@@ -20,7 +20,7 @@
 		<img src = "icon.png" class = "logo" alt = "green square, the block sites browser extension icon">
 		<h2 class = "title"> block sites help information </h2>
 		<br>
-		<h3> Question: Why are there different groups? How should I distinguish my groups? </h3>
+		<h3> Q: Why are there different groups? How should I distinguish my groups? </h3>
 		<p class = "answer"> 
 			Different groups should have different sites that are at different 
 			times. For example, if I wanted to block Twitter only in the 
@@ -30,17 +30,103 @@
 			the morning and at night, but Twitter only in the morning, I would 
 			use two groups. 
 		</p>
-
 		<br>
-		<h3> Question: What does the "block all sites" button do? </h3>
+
+		<h3> Q: How do the three ways (domain, characters, regex) to match sites work? </h3>
+		<p class = "answer"> 
+			Domain match works by getting the domains of the current URL, 
+			including the subdomains and top level domains. A URL that is 
+			"https://www.example.co.uk/path/path/path" would have the domains 
+			"www.example.co.uk". If you wanted to match that domain and any other 
+			paths and pages on that website, you could add "example.co.uk" or 
+			"www.example.co.uk" to a domain match.
+
+			<br>
+			<br>
+			Has characters matches URLS that have a string of characters in it. 
+			For example, if you blocked "example" then any URL with example in it 
+			would be matched, for example: "https://example.org" or 
+			"https://google.com/example."
+			<br>
+			If you wanted the characters match to be case insenstive (no 
+			difference in matching upper or lower cases), then you should use 
+			regex. If you wanted to match the characters "example" anywhere in the 
+			URL, you could write "/(.*)example(.*)/ig" where the i means case 
+			insensitive and the g matches anywhere. 
+			<br>
+			<br>
+			Regex match uses literal Javascript regular expressions. If you would 
+			like to include flags, then you should format the regex as "/regex/
+			flags" or you could write it without flags as "regex". I recommend <a href = 
+			"https://regex101.com/">testing</a> all regexes to make sure they 
+			block what you want. If you write /(.*)/ then it will block all 
+			websites (no Chrome settings or extension pages will ever be blocked).
+		</p>
+		<br>
+
+		<h3> Q: What does the "block all sites" button do? </h3>
 		<p class = "answer"> 
 			This button compiles all the websites from every group that you 
 			have active (selected green for on) and blocks those websites 
-			until midnight. 
+			until midnight. If you like to block all sites for longer than 
+			midnight, then you should use the "block all sites until" button and chose a day and time on the calendar. 
 		</p>
 
 		<br>
-		<h3> Question: I made a change on settings, reloaded, and the change didn't register? </h3>
+		<h3> Q: What does the "I changed time zones / re-check" button do? </h3>
+		<p class = "answer"> 
+			This button is located on the popup, which can be accessed by
+			clicking on the extension icon in the top right.
+			The way that the code works to see what websites should be blocked is 
+			by using the current time and calculating when it will need to next check
+		 	(when another site should start being blocked or the current ones should
+		  	become unblocked). This calculation for when to re-check is in minutes. 
+			Therefore, if you change time zones before the next check should happen,
+			it will be off. The button manually makes it recalculate what sites 
+			should be currently blocked. 
+		</p>
+
+		<br>
+		<h3> Q: What do the pause buttons do? </h3>
+		<p class = "answer"> 
+			This button is located on the popup, which can be accessed by
+			clicking on the extension icon in the top right. 
+			The "pause until midnight" button stops all sites from being 
+			blocked until midnight, when the normal blocking schedules resume.
+			The "pause for __ minutes" button stops all sites from being blocked
+			for the amount of time given. The minimum time is 1 minute, the
+			maximum is 1440 minutes (24 hours). 
+			<br>
+			If you would like the end the pausing early, you can click the "timezone change / re-check button." If you edit the settings page, this will automatically trigger a re-check of what should be blocked, so you should probably re-click the pause button if you do so. 
+			<br>
+			You can turn off the ability to pause in the settings page. This will just get rid of the pause buttons in the popup. 
+		</p>
+
+		<br>
+		<h3> Q: What is the redirect URL? </h3>
+		<p class = "answer">
+			When you view a blocked site, instead of viewing the default blocked 
+			page of this extension, you can chose your own page to see. It must 
+			be a proper URL with a protocol (like https://) at the beginning. 
+			You cannot chose a redirect URL that would be blocked by any group 
+			-- this is to avoid an infinite loop of reloading the page. 
+		</p>
+
+		<br>
+		<h3> Q: Can I change / add to the photos that show on the blocked site? </h3>
+		<p class = "answer"> 
+			Yes! First, move your image into the folder titled "images" within 
+			the "blockSites" extension folder. Then, put the name of those 
+			images and some optional alt text in the file "blocked.js". There 
+			are instructions of where exactly to write those within that file.
+			<br>
+			You must write the name of the images in the "blocked.js" file 
+			because client side Javascript (like this extension) cannot access
+			the file system. 
+		</p>
+
+		<br>
+		<h3> Q: I made a change on settings, reloaded, and the change didn't register? </h3>
 		<p class = "answer"> 
 			Changes are saved automatically: 500ms after the last edit and when 
 			you close the page. There is also a 'save' button in the top left
@@ -54,55 +140,7 @@
 		</p>
 
 		<br>
-		<h3> Question: Can I change / add to the photos that show on the blocked site? </h3>
-		<p class = "answer"> 
-			YES! First, move your image into the folder titled "images" within 
-			the "blockSites" extension folder. Then, put the name of those 
-			images and some alt text in the file "blocked.js". There are more 
-			instructions of where exactly to write those within that file. 
-		</p>
-
-		<br>
-		<h3> Question: What does the "I changed time zones / recheck" button do? </h3>
-		<p class = "answer"> 
-			This button is located on the popup, which can be accessed by
-			clicking on the extension icon in the top right.
-			The way that the code works to see what websites should be blocked is 
-			by using the current time and calculating when it will need to next check
-		 	(when another site should start being blocked or the current ones should
-		  	become unblocked). This calculation for re-checking is in minutes. 
-			Therefore, if you change time zones before the next check should happen,
-			it will be off. The button manually makes it recalculate what sites 
-			should be currently blocked. 
-		</p>
-
-		<br>
-		<h3> Question: what do the pause buttons do? </h3>
-		<p class = "answer"> 
-			This button is located on the popup, which can be accessed by
-			clicking on the extension icon in the top right. 
-			The "pause until midnight" button stops all sites from being 
-			blocked until midnight, when the normal blocking schedules resume.
-			The "pause for __ minutes" button stops all sites from being blocked
-			for the amount of time given. The minimum time is 1 minute, the
-			maximum is 1440 minutes (24 hours). 
-			The pausing can be undone by clicking the "re-check button"......			
-		</p>
-
-		<br>
-	 	<h3> Question: Why do you have all those permissions? Are you reading and changing information on all sites? </h3>
-	 	<p class = "answer"> 
-	 		Chrome has designated the URL to be a sensitive property of a tab. 
-	 		Therefore, this extension uses a strong permission, "tabs". Using 
-	 		"tabs" creates a warning that says this extension can "read your 
-	 		browsing history". This permission cannot actually read any past 
-	 		browsing you have done, it can only read the URL information of 
-	 		current sites. The other permissions are "storage" and "alarms" 
-	 		whose usages are explained in a later question. 
-	 	</p>
-
-		<br>
-	 	<h3> Question: I put the same website in sites to block and sites to exclude from blocking, what will happen? </h3>
+	 	<h3> Q: I put the same website in sites to block and sites to exclude from blocking, what will happen? </h3>
 	 	<p class = "answer"> 
 	 		The website will not block. If, in the same time period, you have 
 	 		"youtube.com" in the block list but also you have "youtube.com" in 
@@ -112,7 +150,20 @@
 	 	</p>
 
 	 	<br>
-	 	<h3> Question: More specifically, what is being stored? What alarms will fire? </h3>
+	 	<h3> Q: Why do you have all those permissions? Are you reading and changing information on all sites? </h3>
+	 	<p class = "answer"> 
+	 		Chrome has designated the URL to be a sensitive property of a tab. 
+	 		Therefore, this extension uses a strong permission, "tabs". Using 
+	 		"tabs" creates a warning that says this extension can "read your 
+	 		browsing history". This permission cannot actually read any past 
+	 		browsing you have done, it can only read the URL information of 
+	 		current sites. The other permissions are "storage" and "alarms" 
+	 		whose usages are explained in the question about what is being
+	 		stored and what alarms will fire. 
+	 	</p>
+
+	 	<br>
+	 	<h3> Q: More specifically, what is being stored? What alarms will fire? </h3>
 	 	<p class = "answer"> 
 	 		There are two things being stored: "config" and "currentBlock". 
 	 		"config" is the user's settings: a list of groups, where each group 
@@ -122,7 +173,8 @@
 	 		is checked against any sites that update. Alarms fire when a new 
 	 		time starts or the current time block ends, then, "config" is 
 	 		re-analyzed to chose the new websites that should be in 
-	 		"currentBlock". 
+	 		"currentBlock". Whenever a change to the settings is made, then
+	 		the "currentBlock" is recalculated. 
 	 	</p>
 
 
