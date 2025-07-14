@@ -38,8 +38,10 @@
 			including the subdomains and top level domains. A URL that is 
 			"https://www.example.co.uk/path/path/path" would have the domains 
 			"www.example.co.uk". If you wanted to match that domain and any other 
-			paths and pages on that website, you could add "example.co.uk" or 
-			"www.example.co.uk" to a domain match.
+			paths and pages on that website, you could add "example.co.uk" to a 
+			domain match. If you only wanted to block this site's pages with the 
+			subdomain www, you could add "www.examle.co.uk" to a domain match
+			and other URLS, like "blog.example.co.uk" would not be blocked.
 
 			<br>
 			<br>
@@ -73,7 +75,7 @@
 		</p>
 
 		<br>
-		<h3> Q: What does the "I changed time zones / re-check" button do? </h3>
+		<h3> Q: What does the "timezone change / re-check blocking" button do? </h3>
 		<p class = "answer"> 
 			This button is located on the popup, which can be accessed by
 			clicking on the extension icon in the top right.

@@ -34,9 +34,11 @@ config has the following:
 
 currentBlock:
 	- (optional) sites: string array of sites to block
+			domain match
 	- (optional) sitesChar
 	- (optional) sitesRegex
 	- (optional) excludes: string array of sites to exclude from blocking
+			domain match
 	- (optional) excludesChar
 	- (optional) excludesRegex
 */
@@ -154,13 +156,13 @@ function calculateBlock(config) {
 	console.log(config);
 
 	// array of websites to be written to storage to be blocked
-	let sites = new Map();
-	let sitesChar = new Map();
-	let sitesRegex = new Map();
+	let sites = new Set();
+	let sitesChar = new Set();
+	let sitesRegex = new Set();
 	// array of websites to be excluded from blocking
-	let excludes = new Map();
-	let excludesChar = new Map();
-	let excludesRegex = new Map();
+	let excludes = new Set();
+	let excludesChar = new Set();
+	let excludesRegex = new Set();
 
 	if (config.blockAll) {
 		for (let g of config.groups) {
@@ -169,13 +171,13 @@ function calculateBlock(config) {
 				continue;
 			}
 
-			sites = arrayAddToMap(sites, g.sites);
-			sitesChar = arrayAddToMap(sitesChar, g.sitesChar);
-			sitesRegex = arrayAddToMap(sitesRegex, g.sitesRegex);
+			sites = arrayAddToSet(sites, g.sites);
+			sitesChar = arrayAddToSet(sitesChar, g.sitesChar);
+			sitesRegex = arrayAddToSet(sitesRegex, g.sitesRegex);
 
-			excludes = arrayAddToMap(excludes, g.excludes);
-			excludesChar = arrayAddToMap(excludesChar, g.excludesChar);
-			excludesRegex = arrayAddToMap(excludesRegex, g.excludesRegex);
+			excludes = arrayAddToSet(excludes, g.excludes);
+			excludesChar = arrayAddToSet(excludesChar, g.excludesChar);
+			excludesRegex = arrayAddToSet(excludesRegex, g.excludesRegex);
 		}
 		if (config.blockAllUntil !== undefined && config.blockAllUntil !== null) {
 			const alarmTime = checkDateExpired(config.blockAllUntil);
@@ -206,8 +208,6 @@ function calculateBlock(config) {
 
 	// const groups = config.groups;
 	for (let g of config.groups) { 
-		let addedGroup = false;
-
 		// if that group is turned off
 		// if the current day is not chosen as a day to block in the group
 		if (!g.active || !g.days[day]) {
@@ -226,17 +226,13 @@ function calculateBlock(config) {
 				// websites from same group, use addedGroup boolean
 				// because multiple opportunities to add each group
 				// as all of the times are checked
-				if (!addedGroup) {
-					sites = arrayAddToMap(sites, g.sites);
-					sitesChar = arrayAddToMap(sitesChar, g.sitesChar);
-					sitesRegex = arrayAddToMap(sitesRegex, g.sitesRegex);
-					excludes = arrayAddToMap(excludes, g.excludes);
-					excludesChar = arrayAddToMap(excludesChar, g.excludesChar);
-					excludesRegex = arrayAddToMap(excludesRegex, g.excludesRegex);
-					addedGroup = true;
-					// DOES PUTTING A BREAK HERE BREAK THINGS??
-					break;
-				}
+				sites = arrayAddToSet(sites, g.sites);
+				sitesChar = arrayAddToSet(sitesChar, g.sitesChar);
+				sitesRegex = arrayAddToSet(sitesRegex, g.sitesRegex);
+				excludes = arrayAddToSet(excludes, g.excludes);
+				excludesChar = arrayAddToSet(excludesChar, g.excludesChar);
+				excludesRegex = arrayAddToSet(excludesRegex, g.excludesRegex);
+				break;
 
 				if (time[1] < firstFinish) {
 					firstFinish = time[1];
@@ -254,43 +250,43 @@ function calculateBlock(config) {
 	writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, config.redirect);
 }
 
-// Adds all values of the inputted array to the inputted map. This is useful
+// Adds all values of the inputted array to the inputted set. This is useful
 // in order to avoid duplicate websites to block or exclude from blocking. 
 // This is a helper function to calculateBlock
-function arrayAddToMap(map, arr) {
-	if (arr === undefined || map === undefined) {
-		return map;
+function arrayAddToSet(set, arr) {
+	if (arr === undefined || set === undefined) {
+		return new Set();
 	}
-	for (let val of arr) {
-		map.set(val, 1);
+	for (let s of arr) {
+		set.add(s);
 	}
-	return map;
+	return set;
 }
 
-// Inputs a map and outputs an array made of the keys. Used for changing the map
+// Inputs a set and outputs an array made of the keys. Used for changing the set
 // to array in writeCurrentBlock
-function mapToArray(map) {
+function setToArray(set) {
 	let arr = [];
 
-	if (map === undefined) {
+	if (set === undefined) {
 		return arr;
 	}
 
-	map.forEach(function(value, key, map) {
-		arr.push(key);
-	});
+	for (const s of set) {
+		arr.push(s)
+	}
 	return arr;
 }
 
 // Inputs the sites to block map and sites to exclude map, then writes them to
 // storage as arrays in the currentBlock. 
 function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, redirectURL) {
-	let sitesArr = mapToArray(sites);
-	let sitesCharArr = mapToArray(sitesChar);
-	let sitesRegexArr = mapToArray(sitesRegex);
-	let excludesArr = mapToArray(excludes);
-	let excludesCharArr = mapToArray(excludesChar);
-	let excludesRegexArr = mapToArray(excludesRegex);
+	let sitesArr = setToArray(sites);
+	let sitesCharArr = setToArray(sitesChar);
+	let sitesRegexArr = setToArray(sitesRegex);
+	let excludesArr = setToArray(excludes);
+	let excludesCharArr = setToArray(excludesChar);
+	let excludesRegexArr = setToArray(excludesRegex);
 
 	let currentBlock = {}; 
 
