@@ -10,7 +10,7 @@
 */
 
 
-import { getConfig, swapClicked, isButtonOn, dateToMinutes, buttonOn, buttonOff, checkBlockedSettings } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings } from "./sharedFunctions.js";
 
 
 // Creates new tab of settings.html
@@ -126,5 +126,3 @@ document.getElementById("pauseMidnight").addEventListener("click", function() {
 
 	sendMessageToBackground({task: "pause", time: -1});
 });
-
-

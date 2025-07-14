@@ -23,6 +23,8 @@ export function swapClicked(button, activeButton) {
 }
 
 // Turns the inputted button green with optional "on" text
+// Used in this file and in popup.js and settings.js to color buttons once got
+// booleans from storage.
 export function buttonOn(button, activeButton) {
 	button.className = "selected";
 	if (activeButton) {
@@ -31,6 +33,8 @@ export function buttonOn(button, activeButton) {
 }
 
 // Turns the inputted button green with optional "off" text
+// Used in this file and in popup.js and settings.js to color buttons once got
+// booleans from storage.
 export function buttonOff(button, activeButton) {
 	button.className = "unselected";
 	if (activeButton) {
@@ -52,7 +56,7 @@ export async function getConfig() {
 
 // Inputs a button element, returns true if it was selected and green, false
 // otherwise. 
-// Used in settings and popup
+// Used in settings.js and popup.js
 export function isButtonOn(element) {
 	if (element.className === "selected") {
 		return true;
@@ -60,18 +64,10 @@ export function isButtonOn(element) {
 	return false;
 }
 
-// Inputs a date, returns how many minutes it has been until that date's time
-// of day. 
-// Example: 11pm --> 1380
-// Example: 12:05am --> 5
-export function dateToMinutes(date) {
-	return date.getMinutes() + (date.getHours() * 60);
-}
-
 // Inputs today's date and when the blockAllUntil or blockSettingsUntil will 
 // expire (in milliseconds) and then outputs -1 if it does not expire today, 
 // 0 if it already expired, or the number of minutes until it expires today.
-// Used in checkBlockSettings and in background.js 
+// Used in this file and in background.js 
 export function checkDateExpired(date) {
 	const today = new Date();
 	const diff = date-today;
@@ -117,7 +113,7 @@ export function checkBlockedSettings(config) {
 // then 'url' is just the hostname (subdomains.domains.tlds) prepended with
 // a period. 
 // Used in background.js (to see if url should be blocked) and settings.js
-// (to see if redirect address url overlaps with anything that is blocked)
+// (to see if redirect URL overlaps with anything that is blocked)
 export function checkURLSite(site, url, type) {
 	switch (type) {
 	case "char":
@@ -145,7 +141,7 @@ export function checkURLSite(site, url, type) {
 				// empty string
 				flags = regex.substring(flagsInd+1);
 
-				// the regex should not include the slashes that surround it
+				// final regex should not include the slashes that surround it
 				regex = regex.substring(1, flagsInd)
 			}
 		}

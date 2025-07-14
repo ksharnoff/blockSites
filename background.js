@@ -10,7 +10,7 @@
 	blockAll, pause).
 */
 
-import { getConfig, dateToMinutes, checkDateExpired, checkURLSite } from "./sharedFunctions.js";
+import { getConfig, checkDateExpired, checkURLSite } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
@@ -42,6 +42,12 @@ currentBlock:
 	- (optional) excludesChar
 	- (optional) excludesRegex
 */
+
+// Clear the storage once uninstalled
+chrome.runtime.setUninstallURL("", function() {
+	chrome.alarms.clearAll();
+	chrome.storage.local.clear();
+});
 
 // Upon initial installation or updating: 
 chrome.runtime.onInstalled.addListener(function(details) {
@@ -110,9 +116,9 @@ chrome.storage.onChanged.addListener(function(changes) {
 	}
 });
 
-
+//////////////////////////////////////////
 // Recalculating and storing currentBlock: 
-
+//////////////////////////////////////////
 
 // Once alarm is sounded, update the currently blocked sites.
 chrome.alarms.onAlarm.addListener(function(alarm) {
@@ -148,9 +154,9 @@ function updateCurrentBlock() {
 }
 
 // Takes in the config item from storage. 
-// Figures out what sites should be blocked now given the day and time
-// calculates when an alarm should next be called (so that is is O(n) not O(2n)) also, 
-// by when the current site times expire. 
+// Figures out what sites should be blocked now given the day and time,
+// calculates when an alarm should next be called by when the current site 
+// times expire. 
 function calculateBlock(config) {
 	console.log("config:");
 	console.log(config);
@@ -278,6 +284,14 @@ function setToArray(set) {
 	return arr;
 }
 
+// Inputs a date, returns how many minutes it has been until that date's time
+// of day. 
+// Example: 11pm --> 1380
+// Example: 12:05am --> 5
+function dateToMinutes(date) {
+	return date.getMinutes() + (date.getHours() * 60);
+}
+
 // Inputs the sites to block map and sites to exclude map, then writes them to
 // storage as arrays in the currentBlock. 
 function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, redirectURL) {
@@ -322,7 +336,9 @@ function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar,
 }
 
 
+/////////////////////////////////////////////////////
 // Creating alarms (for re-calculating currentBlock):
+/////////////////////////////////////////////////////
 
 
 // Inputs number of minutes, sets an alarm to go off after that many minutes
@@ -369,9 +385,11 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 }
 
 
+////////////////////////////////////////////////
 // Logic about blocking currently changing tabs: 
+////////////////////////////////////////////////
 
-
+[]
 // Listener for when any tab gets updated. Then, helper functions are called
 // so that it is checked if it should be blocked and then is blocked if so. 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
@@ -503,7 +521,9 @@ function blockTab(tabId, redirectURL) {
 }
 
 
+////////////////////
 // Tasks from popup: 
+////////////////////
 
 
 // Once message is received (from popup), do the task: 1) updating current block,

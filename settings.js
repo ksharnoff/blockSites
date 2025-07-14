@@ -50,7 +50,7 @@ window.addEventListener("load", function() {
 		let blockAllButton = document.getElementById("blockAll");
 		buttonOff(blockAllButton, true);
 
-		if (value !== null || value.blockAll !== undefined) {
+		if (value !== null && value.blockAll !== undefined) {
 			if (value.blockAll) {
 				buttonOn(blockAllButton, true);
 			} 
@@ -155,6 +155,9 @@ window.addEventListener("load", function() {
 	})
 });
 
+//////////////////////////
+// Saving data to storage: 
+//////////////////////////
 
 // Iterate through all the groups, get all the inputs, make it into Group 
 // objects, and save to storage as "config".
@@ -288,6 +291,8 @@ function validRedirect(urlStr, groups) {
 	return urlStr;
 }
 
+// Changes the color of the error circle next to the redirect URL input to red
+// and write the inputted error message next to it. 
 function errorCircle(error) {
 	document.getElementById("redirectURLCircle").className = "circle redCircle";
 	document.getElementById("redirectURLError").innerHTML = error;
@@ -520,6 +525,11 @@ function matchStartEndTimeNodes(elementList, groupNum) {
 	return finalTimes;
 }
 
+// Helper for storing input to groups while saving. Iterates through list of 
+// input elements, matching the text with what is selected in the dropdown,  // domain, char, or regex. groupNum is necessary as an input in order to get 
+// the id of the dropdown correctly. An object with all the sites of the group
+// in their own lists is returned, if excludes is true then the object is the
+// excludes sites object while if not then it is a sites object. 
 function matchSiteToType(elementList, groupNum, excludes) {
 	let domain = [];
 	let char = [];
@@ -588,6 +598,10 @@ function Group(name, active, sitesObj, excludesObj, times, days) {
 	this.times = times;
 	this.days = days;
 }
+
+///////////////////////////////////////////////////////////////
+// Time formatting and translating (used in drawing and saving) 
+///////////////////////////////////////////////////////////////
 
 // Inputs an array of ints (how time is stored in config) that represent
 // the time after midnight in minutes. Returns an array that has 
@@ -714,7 +728,9 @@ function dateTimeInputToMili(dateTime) {
 	return newDate.getTime()
 }
 
-
+///////////////////////////////////////////
+// Drawing empty and full groups to screen: 
+///////////////////////////////////////////
 
 // Once more groups button is pressed, calculate the groupNum of the new group
 // and then draw it. 
@@ -962,6 +978,8 @@ function cleanGroupForDraw(groupNum, group) {
 
 // Returns count of all the sites -- sites, sitesChar, sitesRegex or the same
 // but for excludes if excludes is true
+// This is for the site count data saved in order to give each site's dropdown
+// its own unique id to be easily found later. 
 function countSites(group, excludes) {
 	let count = 0;
 
@@ -991,6 +1009,10 @@ function countSites(group, excludes) {
 	return count;
 }
 
+/////////////////////////////////////////////////
+// Creating elements and divs for drawing groups: 
+/////////////////////////////////////////////////
+
 // Returns a "more <input>" button to be used for "site", "exclude", "time"
 // as specified in the type input. The buttonText is "more times" or "more
 // sites"
@@ -1010,7 +1032,7 @@ function moreInputsButton(type, buttonText, groupNum) {
 	return moreButton;
 }
 
-// Draws more input spaces to settings page, where type is "sits", "exclude", 
+// Draws more input spaces to settings page, where type is "site", "exclude", 
 // or "time". groupNum is needed to find the parent div to append to. 
 function drawMoreInputs(type, groupNum) {
 	if (type !== "time" && type !== "site" && type !== "exclude") {
@@ -1085,13 +1107,7 @@ function textInputDiv(type, siteNum, matchType, groupNum, value, parentDiv) {
 
 	return div;
 }
-
-const placeholderSiteType = {
-	char: "eg: example",
-	domain: "eg: example.com",
-	regex: "eg: /(.*)example\\.com(\/*)$/ig"
-}; 
-
+ 
 // Type is exclude or site, siteNum is the count within its list of sites to
 // block or exclude within its group, siteType is the method of blocking, 
 // char, domain, or regex, textInput is the input itself which is used to set
@@ -1133,6 +1149,11 @@ function matchTypeDropdown(type, siteNum, siteType, groupNum, textInput) {
 	return select;
 }
 
+const placeholderSiteType = {
+	char: "eg: example",
+	domain: "eg: example.com",
+	regex: "eg: /(.*)example\\.com(\/*)$/ig"
+};
 // Sets the placeholder text for text input so that it can change as 
 // which dropdown is selected changes. 
 function setSiteTypePlaceholder(type, textInput) {
