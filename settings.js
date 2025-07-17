@@ -251,7 +251,7 @@ function validRedirect(urlStr, groups) {
 	urlStr = urlStr.trim();
 
 	if (urlStr === "") {
-		document.getElementById("redirectURLCircle").className = "circle greenCircle";
+		noErrorCircle();
 		return urlStr;
 	}
 
@@ -265,9 +265,42 @@ function validRedirect(urlStr, groups) {
 	}
 
 	// iterate through all groups, to see if there is overlap, which would 
-	// cause a looping problem later
+	// cause an infinite looping problem later
 	for (const g of groups) {
+		if (!(g.active)) {
+			continue;
+		}
+
+		// used in domain matching
 		let periodURL = "." + url.hostname;
+
+		// If excluded for this group, then don't need to check the sites
+		// because the excluded and the blocked sites travel together
+		let skipGroup = false
+		for (const e of g.excludes) {
+			if (checkURLSite(e, periodURL, "domain")) {
+				skipGroup = true;
+				break;
+			}
+		}
+		for (const e of g.excludesChar) {
+			if (checkURLSite(e, urlStr, "char")) {
+				skipGroup = true;
+				break;
+			}
+		}
+		for (const e of g.excludesRegex) {
+			if (checkURLSite(e, urlStr, "regex")) {
+				skipGroup = true;
+				break;
+			}
+		}
+		// If excluded, then don't need to check if blocked
+		if (skipGroup) {
+			continue;
+		}
+
+
 		for (const s of g.sites) {
 			if (checkURLSite(s, periodURL, "domain")) {
 				errorCircle("overlap with blocked website, cannot save");
@@ -287,7 +320,7 @@ function validRedirect(urlStr, groups) {
 			}
 		}
 	}
-	document.getElementById("redirectURLCircle").className = "circle greenCircle";
+	noErrorCircle()
 	return urlStr;
 }
 
@@ -296,6 +329,11 @@ function validRedirect(urlStr, groups) {
 function errorCircle(error) {
 	document.getElementById("redirectURLCircle").className = "circle redCircle";
 	document.getElementById("redirectURLError").innerHTML = error;
+}
+
+// Makes the circle green
+function noErrorCircle() {
+	document.getElementById("redirectURLCircle").className = "circle greenCircle";
 }
 
 // Sets a timer specified by waitTime and once it has passed that time without
