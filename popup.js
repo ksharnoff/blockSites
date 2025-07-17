@@ -126,3 +126,9 @@ document.getElementById("pauseMidnight").addEventListener("click", function() {
 
 	sendMessageToBackground({task: "pause", time: -1});
 });
+
+// If cancel pause is clicked, then send message to write the stored pause to 
+// null.
+document.getElementById("cancelPause").addEventListener("click", function() {
+	sendMessageToBackground({task: "cancelPause"});
+});

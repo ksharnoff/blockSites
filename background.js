@@ -7,25 +7,27 @@
 	This file deals with the background functionality of figuring out what 
 	sites should be blocked now (in currentBlock) and when any tab is updated
 	blocking it or not. This also does the back end of the popup (recheck, 
-	blockAll, pause).
+	blockAll, pause).ch
 */
 
 import { getConfig, checkDateExpired, checkURLSite } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
-
+redirect
 config has the following:
-	- blockAll: boolean
-	- pause: boolean
+	- blockAll: boolean (if all is blocked right now)
+	- pause: boolean (if allowed to pause)
+	- pauseUntil: milliseconds since the epoch or null
 	- blockAllUntil: milliseconds since the epoch or null
 	- blockSettings: milliseconds since the epoch or null
+	- redirect: valid url as string or ""
 	- groups: array of group objects, specified in settings.js. Each group has:
 		name: string
 		active: boolean
-		sites: string array of sites to block
-		sitesChar
-		sitesRegex
+		sites: string array of sites to block (domain matching)
+		sitesChar " (character includes matching)
+		sitesRegex " (regex match)
 		excludes: string array of sites to exclude from blocking
 		excludesChar
 		excludesRegex
@@ -45,8 +47,8 @@ currentBlock:
 
 // Clear the storage once uninstalled
 chrome.runtime.setUninstallURL("", function() {
-	chrome.alarms.clearAll();
-	chrome.storage.local.clear();
+	// chrome.alarms.clearAll();
+	// chrome.storage.local.clear();
 });
 
 // Upon initial installation or updating: 
@@ -60,14 +62,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
 
 			// if no config stored previously, make an empty one
 			if (value === null) {
-				const config = {
-					groups: [],
-					blockAll: false, 
-					blockAllUntil: null,
-					blockStorage: null,
-					redirect: "", 
-					pause: true
-				}
+				const config = blankConfig();
 
 				chrome.storage.local.set({
 					config: config
@@ -116,9 +111,25 @@ chrome.storage.onChanged.addListener(function(changes) {
 	}
 });
 
+// Several times, if no config was found a blank config is written
+function blankConfig() {
+	return {
+		blockAll: false, 
+		pause: true,
+		pauseUntil: null,	
+		blockAllUntil: null,
+		blockSettings: null,
+		redirect: "", 
+		groups: [],
+	};
+}
+
 //////////////////////////////////////////
 // Recalculating and storing currentBlock: 
 //////////////////////////////////////////
+
+// Number of minutes until midnight
+const MIDNIGHT = 1439;
 
 // Once alarm is sounded, update the currently blocked sites.
 chrome.alarms.onAlarm.addListener(function(alarm) {
@@ -158,8 +169,30 @@ function updateCurrentBlock() {
 // calculates when an alarm should next be called by when the current site 
 // times expire. 
 function calculateBlock(config) {
+
 	console.log("config:");
 	console.log(config);
+
+	// Check if paused and nothing should be blocked
+	if (config.pauseUntil !== undefined && config.pauseUntil !== null) {
+		const checkPause = checkDateExpired(config.blockAllUntil);
+
+		// checkPause will be -1 to be not expiring today or number of minutes
+		// until it expires today -- so nothing should be blocked!
+		if (checkPause !== 0) {
+			createErrorAlarm(checkPause);
+			writeEmptyCurrentBlock();
+			return;
+		}
+
+		// expired, shouldn't be paused, continue to rest of calculations
+		if (checkPause === 0) {
+			config.pauseUntil = null;
+			chrome.storage.local.set({
+				config: config
+			});
+		}
+	}
 
 	// array of websites to be written to storage to be blocked
 	let sites = new Set();
@@ -195,6 +228,8 @@ function calculateBlock(config) {
 					config: config
 				});
 			}
+			// will be -1 (translated here to midnight) or the number of minutes
+			// until it expires today
 			createErrorAlarm(alarmTime);
 		} else {
 			createErrorAlarm(-1);
@@ -210,7 +245,7 @@ function calculateBlock(config) {
 	// firstFinish is the first time that any of the websites currently 
 	// blocking will expire being blocked, and when the alarm to 
 	// re-run updateCurrentBlock() will fire, at most midnight 
-	let firstFinish = 1439;
+	let firstFinish = MIDNIGHT;
 
 	// const groups = config.groups;
 	for (let g of config.groups) { 
@@ -292,8 +327,15 @@ function dateToMinutes(date) {
 	return date.getMinutes() + (date.getHours() * 60);
 }
 
-// Inputs the sites to block map and sites to exclude map, then writes them to
-// storage as arrays in the currentBlock. 
+// Used when paused
+function writeEmptyCurrentBlock() {
+	chrome.storage.local.set({
+		currentBlock: {}
+	});
+}
+
+// Inputs the six sites and excludes sets, then writes them to storage as 
+// arrays in the currentBlock. 
 function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar, excludesRegex, redirectURL) {
 	let sitesArr = setToArray(sites);
 	let sitesCharArr = setToArray(sitesChar);
@@ -323,9 +365,6 @@ function writeCurrentBlock(sites, sitesChar, sitesRegex, excludes, excludesChar,
 		currentBlock.excludesRegex = excludesRegexArr;
 	}
 
-	// console.log("current block!");
-	// console.log(currentBlock);
-
 	chrome.storage.local.set({
 		currentBlock: currentBlock
 	});
@@ -353,21 +392,17 @@ function createErrorAlarm(minutes) {
 	} else {
 		expire = nowMinutes + minutes;
 	}
-	// console.log("called create alarm on expire, nowMinutes:");
-	// console.log(expire);
-	// console.log(nowMinutes);
-
 	createAlarm(expire, nowMinutes, "updateCurrentBlock");
 }
 
 // takes in input of when to alarm and also nowTime from 0 to 2359
-// creates an alarm for that time! 
+// creates an alarm for that time! The name is "updateCurrentBlock"
 function createAlarm(expireMinutes, nowMinutes, name) {
 	// should expire at midnight at the latest, if expire time is smaller 
 	// than now time that means the next day, so it should be midnight
 	// midnight is 23 hours, 59 minutes which is 1,439 minutes
-	if (expireMinutes <= nowMinutes || expireMinutes > 1439) {
-		expireMinutes = 1439;
+	if (expireMinutes <= nowMinutes || expireMinutes > MIDNIGHT) {
+		expireMinutes = MIDNIGHT;
 	}
 
 	let minutesAlarm = expireMinutes-nowMinutes;
@@ -378,7 +413,6 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 
 	console.log("Creating alarm! expire at " + expireMinutes + " now is " + nowMinutes + "; will expire in " + minutesAlarm);
 
-	// "updateCurrentBlock"
 	chrome.alarms.create(name, { 
 		delayInMinutes: minutesAlarm
 	});
@@ -389,7 +423,6 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 // Logic about blocking currently changing tabs: 
 ////////////////////////////////////////////////
 
-[]
 // Listener for when any tab gets updated. Then, helper functions are called
 // so that it is checked if it should be blocked and then is blocked if so. 
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
@@ -400,12 +433,16 @@ chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 	// or that it is currently loading don't do anything! another event
 	// will fire once it's finished. 
 	// tab.highlighted tries to make sure that the changed tab is currently 
-	// being used -- fails if highlighted in another window....
+	// being used -- will fire even if in other window... sad....
 	if (changeInfo.discarded || changeInfo.status === "loading" ||
-	   changeInfo.favIconUrl || (!tab.highlighted)) {
+	   changeInfo.favIconUrl || (!tab.highlighted) || changeInfo.audible || 
+	   (!changeInfo.audible)) {
 		console.log("No need to block! Tab still loading or not in use!");
 		return;
 	}
+
+	console.log(changeInfo);
+	// mostly seeing title and complete --- good! less repeated for same website! 
 
 	// A normal url will start with a protocol, like https://. The chrome 
 	// settings and extensions pages start with chrome. 
@@ -533,7 +570,7 @@ chrome.runtime.onMessage.addListener(async function(request, sender, sendRespons
 	console.log(request);
 
 	if (request === undefined || request.task === undefined) {
-		// do nothing! :D
+		// do nothing! something failed!
 		return;
 	}
 
@@ -547,28 +584,59 @@ chrome.runtime.onMessage.addListener(async function(request, sender, sendRespons
 		if (request.time !== undefined) {
 			pauseBlock(request.time);
 		}
+	} else if (request.task === "cancelPause") {
+		stopPause();
 	}
 });
 
-// Inputs a number of minutes and creates a currentBlock and calls to write it
-// to storage that is empty. Sets an alarm for the number of minutes inputted
-// to change it back to normal. Called after receiving a message from popup. 
+// Inputs a number of minutes and writes to storage a pauseUntil that time.
+// Called after receiving a message from popup. 
 function pauseBlock(time) {
+
+	console.log(time);
+
+	// this is checked in popup.js this is just double checking
 	if (isNaN(time)) {
 		console.log("Tried to pause for a time that isn't a number");
 		console.log(time);
 		return;
 	}
 
-	if (time < 1) {
-		time = -1;
+	const today = Date.now();
+
+	if (time < 1) { // pause until midnight
+		time = MIDNIGHT - dateToMinutes(today);
 	} else if (time > 1400) { // number of minutes in a day
 		time = 1400;
 	}
 
-	chrome.alarms.clearAll();
-	createErrorAlarm(time);
-	writeCurrentBlock(new Map(), new Map());
+	const pause = today + time*1000*60;
+
+	console.log(today);
+	console.log(pause);
+
+	getConfig()
+	.then(function(value) {
+		value.pauseUntil = pause;
+
+		console.log(value);
+
+		chrome.storage.local.set({
+			config: value
+		});
+	});
+}
+
+// Edits config to make pauseUntil null, called from a message from the popup.
+function stopPause() {
+	getConfig()
+	.then(function(value) {
+		value.pauseUntil = null;
+
+		chrome.storage.local.set({
+			config: value
+		});
+	});
 }
 
 // Edits the config stored to swap the blockAll in config to the inputted
@@ -579,14 +647,8 @@ function blockAllSwap(active) {
 	.then(function(value) {
 		// if previously was nothing in storage, create blank config
 		if (value == null) {
-			const config = {
-				groups: [],
-				blockAll: active, 
-				blockAllUntil: null,
-				blockSettings: null,
-				redirect: "", 
-				pause: true
-			}
+			let config = blankConfig();
+			config.blockAll = active;
 
 			chrome.storage.local.set({
 				config: config
@@ -594,8 +656,7 @@ function blockAllSwap(active) {
 			return;
 		}
 
-		// else, edit the currently stored item and re-set it
-
+		// else, edit the currently stored config and put it back
 		value.blockAll = active;
 
 		chrome.storage.local.set({

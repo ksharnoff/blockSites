@@ -64,7 +64,7 @@ export function isButtonOn(element) {
 	return false;
 }
 
-// Inputs today's date and when the blockAllUntil or blockSettingsUntil will 
+// Inputs today's date and when the __Until (pauseUntil, blockUntil, etc) will 
 // expire (in milliseconds) and then outputs -1 if it does not expire today, 
 // 0 if it already expired, or the number of minutes until it expires today.
 // Used in this file and in background.js 
@@ -82,12 +82,7 @@ export function checkDateExpired(date) {
 		return -1;
 	}
 
-	let toReturn = Math.floor((diff/1000)/60);
-
-	console.log(diff)
-	console.log(toReturn);
-
-	return toReturn;
+	return Math.floor((diff/1000)/60);
 }
 
 // Inputs the config object, returns true if it is blocked, false if not. In
