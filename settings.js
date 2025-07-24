@@ -39,6 +39,13 @@ window.addEventListener("load", function() {
 			document.getElementById("save").innerHTML = "no settings can be changed";
 		}
 
+		// write down the current paused timing so that it can be saved later
+		if (value !== null & value.pauseUntil !== undefined) {
+			allGroupsDiv.dataset.pauseUntil = value.pauseUntil;
+		} else {
+			allGroupsDiv.dataset.pauseUntil = null;
+		}
+
 		let blockSettingsDate = document.getElementById("blockSettingsDate");
 		blockSettingsDate.value = whenBlockSettings[0];
 		let blockSettingsTime = document.getElementById("blockSettingsTime");
@@ -78,7 +85,6 @@ window.addEventListener("load", function() {
 				buttonOff(pauseButton, true);
 			}
 		}
-
 
 		// redirect to different URL
 		let redirectURL = document.getElementById("redirectURL");
@@ -182,7 +188,7 @@ function save() {
 		blockAll = true;
 	}
 
-	//  get blockAllSitesUntil
+	// get blockAllSitesUntil
 	let blockAllUntilButton = document.getElementById("blockAllUntilButton");
 	let blockAllUntil = null;
 	if (isButtonOn(blockAllUntilButton)) {
@@ -213,6 +219,12 @@ function save() {
 	let redirectURL = redirectURLInput.value;
 	redirectURL = validRedirect(redirectURL, groupsList);
 
+	// save the pause until that was saved from when config was first loaded
+	let pauseUntil = allGroupsDiv.dataset.pauseUntil;
+	// should only be null or milliseconds since epoch
+	if (pauseUntil !== null && isNaN(parseInt(pauseUntil))) {
+		pauseUntil = null;
+	}
 
 	// create config object: list of groups and blockAll
 	const config = {
@@ -221,10 +233,13 @@ function save() {
 		blockAllUntil: blockAllUntil,
 		blockSettings: blockSettings,
 		pause: pause, 
+		pauseUntil: pauseUntil,
 		redirect: redirectURL
 	}
 
 	let saveButton = document.getElementById("save");
+
+	console.log(config);
 
 	setConfig(config).then(function() {
 		// give the user feedback that it saved! 
