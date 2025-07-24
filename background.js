@@ -10,7 +10,7 @@
 	blockAll, pause).ch
 */
 
-import { getConfig, checkDateExpired, checkURLSite } from "./sharedFunctions.js";
+import { getConfig, checkDateExpired, checkURLSite, setConfig } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
@@ -105,8 +105,14 @@ function clearAlarmsPrintBytesUsed() {
 chrome.storage.onChanged.addListener(function(changes) {
 	for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
 		if (key === "config") {
-			updateCurrentBlock();
-			return;
+			if (newValue !== undefined && newValue !== null) {
+				calculateBlock(newValue);
+
+				console.log("storage change! old value:");
+				console.log(oldValue);
+				console.log("new value:");
+				console.log(newValue);
+			}
 		}
 	}
 });
@@ -156,6 +162,8 @@ function updateCurrentBlock() {
 			createErrorAlarm(120);
 			return;
 		} 
+		// console.log("value:");
+		// console.log(value);
 		calculateBlock(value);
 	})
 	.catch(function(error) {
@@ -170,12 +178,15 @@ function updateCurrentBlock() {
 // times expire. 
 function calculateBlock(config) {
 
-	console.log("config:");
-	console.log(config);
+	// console.log("config:");
+	// console.log(config);
 
 	// Check if paused and nothing should be blocked
 	if (config.pauseUntil !== undefined && config.pauseUntil !== null) {
-		const checkPause = checkDateExpired(config.blockAllUntil);
+		const checkPause = checkDateExpired(config.pauseUntil);
+
+		console.log("check pause!");
+		console.log(checkPause);
 
 		// checkPause will be -1 to be not expiring today or number of minutes
 		// until it expires today -- so nothing should be blocked!
@@ -428,21 +439,20 @@ function createAlarm(expireMinutes, nowMinutes, name) {
 chrome.tabs.onUpdated.addListener(function(tabID, changeInfo, tab) {
 
 	console.log("tab updated " + tab.url);
+	// console.log(changeInfo);
 
-	// if the change of the tab is that it has been unloaded from memory
-	// or that it is currently loading don't do anything! another event
-	// will fire once it's finished. 
-	// tab.highlighted tries to make sure that the changed tab is currently 
-	// being used -- will fire even if in other window... sad....
+	// A lot of these calls are repeated when other things are happening,
+	// if it is "loading" then at some point it will be complete. 
+	// discarded and highlighted are trying to fix tabs that are in the background
+	// but it doesn't do it well.
+	// It must be changeInfo.audible == false because !(changeInfo.audible) was 
+	// always true when the change wasn't about the audibility. 
 	if (changeInfo.discarded || changeInfo.status === "loading" ||
-	   changeInfo.favIconUrl || (!tab.highlighted) || changeInfo.audible || 
-	   (!changeInfo.audible)) {
+	   changeInfo.favIconUrl || (!tab.highlighted) || changeInfo.audible ||
+	   (changeInfo.audible == false)) {
 		console.log("No need to block! Tab still loading or not in use!");
 		return;
 	}
-
-	console.log(changeInfo);
-	// mostly seeing title and complete --- good! less repeated for same website! 
 
 	// A normal url will start with a protocol, like https://. The chrome 
 	// settings and extensions pages start with chrome. 
@@ -592,9 +602,6 @@ chrome.runtime.onMessage.addListener(async function(request, sender, sendRespons
 // Inputs a number of minutes and writes to storage a pauseUntil that time.
 // Called after receiving a message from popup. 
 function pauseBlock(time) {
-
-	console.log(time);
-
 	// this is checked in popup.js this is just double checking
 	if (isNaN(time)) {
 		console.log("Tried to pause for a time that isn't a number");
@@ -602,7 +609,7 @@ function pauseBlock(time) {
 		return;
 	}
 
-	const today = Date.now();
+	const today = new Date();
 
 	if (time < 1) { // pause until midnight
 		time = MIDNIGHT - dateToMinutes(today);
@@ -610,20 +617,13 @@ function pauseBlock(time) {
 		time = 1400;
 	}
 
-	const pause = today + time*1000*60;
-
-	console.log(today);
-	console.log(pause);
+	const pause = today.getTime() + time*1000*60;
 
 	getConfig()
 	.then(function(value) {
 		value.pauseUntil = pause;
 
-		console.log(value);
-
-		chrome.storage.local.set({
-			config: value
-		});
+		setConfig(value);
 	});
 }
 
@@ -633,9 +633,7 @@ function stopPause() {
 	.then(function(value) {
 		value.pauseUntil = null;
 
-		chrome.storage.local.set({
-			config: value
-		});
+		setConfig(value);
 	});
 }
 
@@ -646,22 +644,12 @@ function blockAllSwap(active) {
 	getConfig()
 	.then(function(value) {
 		// if previously was nothing in storage, create blank config
-		if (value == null) {
-			let config = blankConfig();
-			config.blockAll = active;
-
-			chrome.storage.local.set({
-				config: config
-			});
-			return;
+		if (value === null) {
+			value = blankConfig();
 		}
 
-		// else, edit the currently stored config and put it back
 		value.blockAll = active;
 
-		chrome.storage.local.set({
-			config: value
-		});
+		setConfig(value);
 	});
 }
-

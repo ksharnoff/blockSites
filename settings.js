@@ -8,7 +8,7 @@
 	from storage and saving changes.
 */
 
-import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings, checkURLSite } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings, checkURLSite, setConfig } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -24,8 +24,6 @@ let change = true;
 window.addEventListener("load", function() {
 	getConfig()
 	.then(function(value) {
-		console.log("loaded config!");
-		console.log(value);
 
 		// block all setting changes until time
 		let blockSettingsButton = document.getElementById("blockSettingsButton");
@@ -226,18 +224,14 @@ function save() {
 		redirect: redirectURL
 	}
 
-	console.log(config);
-
 	let saveButton = document.getElementById("save");
 
-	chrome.storage.local.set({
-		config: config
-	}).then(function () {
+	setConfig(config).then(function() {
 		// give the user feedback that it saved! 
 		saveButton.innerHTML = "saved!";
 
 		// then go back to normal text
-		setTimeout(function () {
+		setTimeout(function() {
 			saveButton.innerHTML = "save";
 		}, 1500)
 	});

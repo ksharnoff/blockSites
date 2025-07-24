@@ -82,7 +82,6 @@ window.addEventListener("load", function() {
 document.getElementById("recheck").addEventListener("click", function() {
 	errorMessage.innerHTML = "";
 	sendMessageToBackground({task: "updateCurrentBlock"});
-	// errorMessage.innerHTML = "Rechecked!";
 });
 
 // Once the pause button is pressed, the contents of the pause input is read

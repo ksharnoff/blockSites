@@ -54,6 +54,13 @@ export async function getConfig() {
 	return result.config;
 }
 
+// Write the new config object to storage
+export async function setConfig(newConfig) {
+	chrome.storage.local.set({
+		config: newConfig
+	});
+}
+
 // Inputs a button element, returns true if it was selected and green, false
 // otherwise. 
 // Used in settings.js and popup.js
