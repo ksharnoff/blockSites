@@ -8,7 +8,7 @@
 	from storage and saving changes.
 */
 
-import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings, checkURLSite, setConfig } from "./sharedFunctions.js";
+import { getConfig, swapClicked, isButtonOn, buttonOn, buttonOff, checkBlockedSettings, checkURLSite, setConfig, nowPlusMinutes } from "./sharedFunctions.js";
 
 // Help button being clicked launches the help webpage. 
 document.getElementById("helpButton").addEventListener("click", function() {
@@ -157,6 +157,31 @@ window.addEventListener("load", function() {
 		// Hide loading message that says the page isn't loaded
 		document.getElementById("loadingMessage").style.visibility = "hidden";
 	})
+});
+
+// Deal with any changes done by the popup so that they are here as well. The
+// changes will also be saved to storage from the background script, because
+// then we don't need to differentiate for if the settings page is open. 
+chrome.runtime.onMessage.addListener(async function(request, sender, sendResponse) {
+	console.log("got a message!!!!! <--------");
+	console.log(request);
+
+	if (request === undefined || request.task === undefined) {
+		// do nothing! something failed!
+		return;
+	}
+
+	if (request.task === "blockAll") {
+		if (request.active !== undefined) {
+			swapClicked(document.getElementById("blockAll"), true);
+		}
+	} else if (request.task === "pause") {
+		if (request.time !== undefined) {
+			allGroupsDiv.dataset.pauseUntil = nowPlusMinutes(request.time);
+		}
+	} else if (request.task === "cancelPause") {
+		allGroupsDiv.dataset.pauseUntil = null;
+	}
 });
 
 //////////////////////////

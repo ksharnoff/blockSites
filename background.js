@@ -10,7 +10,7 @@
 	blockAll, pause).ch
 */
 
-import { getConfig, checkDateExpired, checkURLSite, setConfig } from "./sharedFunctions.js";
+import { getConfig, checkDateExpired, checkURLSite, setConfig, dateToMinutes, nowPlusMinutes } from "./sharedFunctions.js";
 
 /*
 There are two objects in storage: config and currentBlock
@@ -187,6 +187,7 @@ function calculateBlock(config) {
 
 		console.log("check pause!");
 		console.log(checkPause);
+		console.log("is nan check pause:" + isNaN(checkPause));
 
 		// checkPause will be -1 to be not expiring today or number of minutes
 		// until it expires today -- so nothing should be blocked!
@@ -196,12 +197,16 @@ function calculateBlock(config) {
 			return;
 		}
 
-		// expired, shouldn't be paused, continue to rest of calculations
+		// expired, shouldn't be paused
 		if (checkPause === 0) {
 			config.pauseUntil = null;
-			chrome.storage.local.set({
-				config: config
+			// if config is changed, then this will be recalculated anyways,
+			// however if something messed up and it doesn't change, this will
+			// make sure it calculates it
+			setConfig(config).then(function() {
+				calculateBlock(config);
 			});
+			return;
 		}
 	}
 
@@ -328,14 +333,6 @@ function setToArray(set) {
 		arr.push(s)
 	}
 	return arr;
-}
-
-// Inputs a date, returns how many minutes it has been until that date's time
-// of day. 
-// Example: 11pm --> 1380
-// Example: 12:05am --> 5
-function dateToMinutes(date) {
-	return date.getMinutes() + (date.getHours() * 60);
 }
 
 // Used when paused
@@ -602,22 +599,7 @@ chrome.runtime.onMessage.addListener(async function(request, sender, sendRespons
 // Inputs a number of minutes and writes to storage a pauseUntil that time.
 // Called after receiving a message from popup. 
 function pauseBlock(time) {
-	// this is checked in popup.js this is just double checking
-	if (isNaN(time)) {
-		console.log("Tried to pause for a time that isn't a number");
-		console.log(time);
-		return;
-	}
-
-	const today = new Date();
-
-	if (time < 1) { // pause until midnight
-		time = MIDNIGHT - dateToMinutes(today);
-	} else if (time > 1400) { // number of minutes in a day
-		time = 1400;
-	}
-
-	const pause = today.getTime() + time*1000*60;
+	const pause = nowPlusMinutes(time);
 
 	getConfig()
 	.then(function(value) {

@@ -8,6 +8,25 @@
 	from storage.  
 */
 
+// Returns config object from storage or null if it is not in storage
+// Used in background.js, popup.js, and settings.js
+export async function getConfig() {
+	let result = await chrome.storage.local.get("config");
+
+	if (result == undefined || result.config == undefined) {
+		return null;
+	}
+
+	return result.config;
+}
+
+// Write the new config object to storage
+// Used in background.js and settings.js
+export async function setConfig(newConfig) {
+	chrome.storage.local.set({
+		config: newConfig
+	});
+}
 
 // If the button is being hovered over when this function is called, 
 // then it will no longer be inverted coloring. This is on purpose 
@@ -42,25 +61,6 @@ export function buttonOff(button, activeButton) {
 	}
 }
 
-// Returns config object from storage or null if it is not in storage
-// Used in background.js, popup.js, and settings.js
-export async function getConfig() {
-	let result = await chrome.storage.local.get("config");
-
-	if (result == undefined || result.config == undefined) {
-		return null;
-	}
-
-	return result.config;
-}
-
-// Write the new config object to storage
-export async function setConfig(newConfig) {
-	chrome.storage.local.set({
-		config: newConfig
-	});
-}
-
 // Inputs a button element, returns true if it was selected and green, false
 // otherwise. 
 // Used in settings.js and popup.js
@@ -92,6 +92,44 @@ export function checkDateExpired(date) {
 	return Math.floor((diff/1000)/60);
 }
 
+// Number of minutes until midnight
+// (FIGURE OUT HOW TO EXPORT THIS?)
+const MIDNIGHT = 1439;
+
+// Return milliseconds since epoch of the inputted minutes after the current
+// time. Used to calculate when the pausing should end. If something goes wrong,
+// returns null.
+// maybe this should be in a try catch to else return null? 
+// Used in background.js and settings.js
+export function nowPlusMinutes(minutes) {
+	// (for pauseUntil) this is checked in popup.js this is just double checking
+	if (isNaN(minutes)) {
+		console.log("Tried to pause for a time that isn't a number");
+		console.log(minutes);
+		return null;
+	}
+
+	const today = new Date();
+
+	if (minutes < 1) { // pause until midnight
+		minutes = MIDNIGHT - dateToMinutes(today);
+	} else if (minutes > 1400) { // number of minutes in a day
+		minutes = 1400;
+	}
+
+	return today.getTime() + minutes*1000*60;
+}
+
+
+// Inputs a date, returns how many minutes it has been until that date's time
+// of day. 
+// Example: 11pm --> 1380
+// Example: 12:05am --> 5
+// Used in background.js and this file
+export function dateToMinutes(date) {
+	return date.getMinutes() + (date.getHours() * 60);
+}
+
 // Inputs the config object, returns true if it is blocked, false if not. In
 // addition, if it is passed the time to block until, it will re-write the
 // config and unblock it.
@@ -103,9 +141,7 @@ export function checkBlockedSettings(config) {
 		}
 		// therefore, it does equal 0 and should be unblocked! 
 		config.blockSettings = null;
-		chrome.storage.local.set({
-			config: config
-		});
+		setConfig(config);
 	}
 	return false;
 }
